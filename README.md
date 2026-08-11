@@ -20,8 +20,4 @@ Every asset and every target is added by the user — nothing comes pre-configur
 - Portfolio value history, recorded on each price refresh
 - Dark and light themes
 
-## 🔑 Running
-
-Copy `.env.example` to `.env` and add a [Google AI Studio](https://aistudio.google.com/apikey) key — only the assistant needs it. On Windows, run `portfolio.bat`. Otherwise `npm install && npm run build && npm start`.
-
 > **Note:** the app interface is in Portuguese.
