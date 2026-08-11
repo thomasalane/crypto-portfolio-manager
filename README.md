@@ -33,17 +33,20 @@ All calculation lives in `core/`, a set of pure functions with no I/O. The same 
 
 Asset colours are not picked by eye. The four-colour categorical palette was selected by running every candidate through a colourblind-separation validator across all pairs, in both themes — four is the largest set that clears the thresholds. Beyond four assets the donut folds the remainder into a neutral "Other" slice, while the deviation bar list, where colour carries no information, shows every asset.
 
-## 🚧 Status
-
-In development. The calculation layer (`core/`) is complete and covered by tests; the server and interface are being built.
-
-## 🔑 Setup
+## 🔑 Running it
 
 Copy `.env.example` to `.env` and add a [Google AI Studio](https://aistudio.google.com/apikey) key. The key is read only by the server and never reaches the browser. The dashboard works without it — only the assistant needs it.
 
+On Windows, `portfolio.bat` installs dependencies on first run, builds the interface and opens the browser. Otherwise:
+
 ```bash
 npm install
-npm test        # run the test suite
+npm run build
+npm start       # http://localhost:4173
+
+npm test        # 112 tests
 ```
+
+Your positions live in `portfolio.json` next to the app. It is git-ignored — backing it up means copying that one file.
 
 > **Note:** the app interface is in Portuguese.
