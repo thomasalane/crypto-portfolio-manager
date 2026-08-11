@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "currency": "usd",
+  "assets": [
+    {
+      "id": "example-coin",
+      "symbol": "EXMP",
+      "name": "Example Coin",
+      "source": "coingecko",
+      "target": 0.6,
+      "quantity": 12.5,
+      "colorSlot": 1,
+      "lastPrice": 40,
+      "lastPriceAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "example-stable",
+      "symbol": "EXST",
+      "name": "Example Stable",
+      "source": "manual",
+      "target": 0.4,
+      "quantity": 300,
+      "colorSlot": 2,
+      "lastPrice": 1,
+      "lastPriceAt": "2026-01-01T00:00:00.000Z"
+    }
+  ],
+  "history": [
+    { "at": "2026-01-01T00:00:00.000Z", "total": 800 }
+  ]
+}
