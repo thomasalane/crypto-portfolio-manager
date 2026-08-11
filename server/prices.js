@@ -1,0 +1,57 @@
+const BASE = 'https://api.coingecko.com/api/v3';
+const MAX_RESULTS = 15;
+
+/** Turn a non-ok response into a message the interface can show as-is. */
+function describeFailure(status) {
+  if (status === 429) {
+    return new Error('A CoinGecko recusou por limite de requisições. Espere um minuto e tente de novo.');
+  }
+  return new Error(`A CoinGecko não respondeu (erro ${status}). Os preços anteriores foram mantidos.`);
+}
+
+/**
+ * @param {string} query
+ * @param {typeof fetch} fetchImpl
+ * @returns {Promise<Array<{ id: string, symbol: string, name: string }>>}
+ */
+export async function searchAssets(query, fetchImpl = fetch) {
+  const q = String(query ?? '').trim();
+  if (!q) return [];
+
+  const res = await fetchImpl(`${BASE}/search?query=${encodeURIComponent(q)}`);
+  if (!res.ok) throw describeFailure(res.status);
+
+  const body = await res.json();
+  const coins = Array.isArray(body?.coins) ? body.coins : [];
+
+  return coins.slice(0, MAX_RESULTS).map((c) => ({
+    id: c.id,
+    symbol: String(c.symbol ?? '').toUpperCase(),
+    name: c.name,
+  }));
+}
+
+/**
+ * One request for every id. Ids absent from the response are left out rather
+ * than defaulted, so the caller can mark just those assets as stale.
+ *
+ * @param {string[]} ids
+ * @param {string} currency
+ * @param {typeof fetch} fetchImpl
+ * @returns {Promise<Record<string, number>>}
+ */
+export async function fetchPrices(ids, currency = 'usd', fetchImpl = fetch) {
+  if (!ids || ids.length === 0) return {};
+
+  const url = `${BASE}/simple/price?ids=${encodeURIComponent(ids.join(','))}&vs_currencies=${encodeURIComponent(currency)}`;
+  const res = await fetchImpl(url);
+  if (!res.ok) throw describeFailure(res.status);
+
+  const body = await res.json();
+  const prices = {};
+  for (const id of ids) {
+    const value = body?.[id]?.[currency];
+    if (typeof value === 'number') prices[id] = value;
+  }
+  return prices;
+}
