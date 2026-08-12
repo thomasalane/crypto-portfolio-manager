@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { colorForSlot } from '../lib/colors.js';
 import { searchAssets } from '../lib/api.js';
 import { pct, cashPrice, symbolFor } from '../lib/format.js';
+import NumberField from './NumberField.jsx';
 
 /**
  * Everything about which assets exist and what they are aiming at. Nothing is
@@ -115,39 +116,37 @@ export default function AssetEditor({
                   </div>
                 </td>
                 <td>
-                  <input
+                  <NumberField
                     className="narrow"
                     type="number"
                     min="0"
                     max="100"
                     step="0.1"
                     value={Number((a.target * 100).toFixed(4))}
-                    onChange={(e) => patch(a.id, { target: (Number(e.target.value) || 0) / 100 })}
+                    onChange={(next) => patch(a.id, { target: next / 100 })}
                     aria-label={`Meta de ${a.symbol} em porcentagem`}
                   />
                 </td>
                 <td>
-                  <input
+                  <NumberField
                     type="number"
                     min="0"
                     step="any"
                     value={a.quantity}
-                    onChange={(e) => patch(a.id, { quantity: Number(e.target.value) || 0 })}
+                    onChange={(next) => patch(a.id, { quantity: next })}
                     aria-label={`Quantidade de ${a.symbol}`}
                   />
                 </td>
                 <td>
                   {a.source === 'manual' ? (
-                    <input
+                    <NumberField
                       className="narrow"
                       type="number"
                       min="0"
                       step="any"
                       value={a.prices?.[currency] ?? 0}
-                      onChange={(e) =>
-                        patch(a.id, {
-                          prices: { ...a.prices, [currency]: Number(e.target.value) || 0 },
-                        })
+                      onChange={(next) =>
+                        patch(a.id, { prices: { ...a.prices, [currency]: next } })
                       }
                       aria-label={`Preço de ${a.symbol} em ${currency.toUpperCase()}`}
                     />
