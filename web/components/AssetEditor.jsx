@@ -7,7 +7,10 @@ import { pct, price } from '../lib/format.js';
  * Everything about which assets exist and what they are aiming at. Nothing is
  * pre-configured — the list starts empty and the user fills it.
  */
-export default function AssetEditor({ assets, onChange, onSave, errors, saving, dirty, theme }) {
+export default function AssetEditor({
+  assets, onChange, onSave, onRestore, errors, saving, dirty, theme,
+  backupAvailable, restoring,
+}) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -76,6 +79,11 @@ export default function AssetEditor({ assets, onChange, onSave, errors, saving, 
             você informa o preço.
           </p>
         </div>
+        {backupAvailable && (
+          <button className="btn quiet" onClick={onRestore} disabled={restoring} title="Volta para a versão substituída pelo último salvamento">
+            {restoring ? 'Voltando…' : 'Desfazer último salvamento'}
+          </button>
+        )}
         <button className="btn" onClick={onSave} disabled={!dirty || saving}>
           {saving ? 'Salvando…' : 'Salvar'}
         </button>

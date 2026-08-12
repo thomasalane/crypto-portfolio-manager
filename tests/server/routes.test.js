@@ -49,6 +49,18 @@ describe('GET /api/state', () => {
     expect(res.body.warning).toMatch(/não pôde ser lido/);
   });
 
+  it('reports that no earlier version exists on a fresh install', async () => {
+    const res = await request(app()).get('/api/state');
+    expect(res.body.backupAvailable).toBe(false);
+  });
+
+  it('reports an earlier version once a save has replaced one', async () => {
+    await request(app()).put('/api/assets').send({ assets: [asset()] });
+    await request(app()).put('/api/assets').send({ assets: [asset({ quantity: 99 })] });
+    const res = await request(app()).get('/api/state');
+    expect(res.body.backupAvailable).toBe(true);
+  });
+
   it('reports whether the assistant is configured', async () => {
     const withKey = await request(app()).get('/api/state');
     expect(withKey.body.assistantReady).toBe(true);
@@ -105,6 +117,33 @@ describe('PUT /api/assets', () => {
     expect(saved.find((a) => a.id === 'a').colorSlot).toBe(4);
     expect(saved.find((a) => a.id === 'b').colorSlot).toBe(3);
     expect(res.status).toBe(200);
+  });
+});
+
+describe('POST /api/restore', () => {
+  it('brings back the version replaced by the last save', async () => {
+    await request(app()).put('/api/assets').send({ assets: [asset({ quantity: 111 })] });
+    await request(app()).put('/api/assets').send({ assets: [asset({ quantity: 222 })] });
+
+    const res = await request(app()).post('/api/restore');
+    expect(res.status).toBe(200);
+    expect(res.body.portfolio.assets[0].quantity).toBe(111);
+    expect(JSON.parse(readFileSync(dataFile, 'utf8')).assets[0].quantity).toBe(111);
+  });
+
+  it('refuses when there is no earlier version', async () => {
+    const res = await request(app()).post('/api/restore');
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/versão anterior/i);
+  });
+
+  it('keeps the replaced version so a restore can be undone', async () => {
+    await request(app()).put('/api/assets').send({ assets: [asset({ quantity: 111 })] });
+    await request(app()).put('/api/assets').send({ assets: [asset({ quantity: 222 })] });
+
+    await request(app()).post('/api/restore');
+    const back = await request(app()).post('/api/restore');
+    expect(back.body.portfolio.assets[0].quantity).toBe(222);
   });
 });
 

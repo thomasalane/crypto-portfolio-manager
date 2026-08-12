@@ -1,5 +1,6 @@
+import { existsSync } from 'node:fs';
 import express from 'express';
-import { loadPortfolio, savePortfolio } from './store.js';
+import { loadPortfolio, savePortfolio, backupPathFor } from './store.js';
 import { searchAssets, fetchPrices } from './prices.js';
 import { buildPrompt, askModel } from './chat.js';
 import { validateAssets } from '../core/validation.js';
@@ -35,7 +36,25 @@ export function createApp({ dataFile, apiKey, fetchImpl = fetch }) {
 
   app.get('/api/state', (req, res) => {
     const { portfolio, warning } = loadPortfolio(dataFile);
-    res.json({ portfolio, warning, assistantReady: Boolean(apiKey) });
+    res.json({
+      portfolio,
+      warning,
+      assistantReady: Boolean(apiKey),
+      backupAvailable: existsSync(backupPathFor(dataFile)),
+    });
+  });
+
+  app.post('/api/restore', (req, res) => {
+    const backup = backupPathFor(dataFile);
+    if (!existsSync(backup)) {
+      return res.status(400).json({ error: 'Não há versão anterior guardada.' });
+    }
+
+    // savePortfolio parks the current version as it writes, so restoring is
+    // itself undoable — clicking twice returns to where you started.
+    const { portfolio } = loadPortfolio(backup);
+    savePortfolio(dataFile, portfolio);
+    res.json({ portfolio });
   });
 
   app.put('/api/assets', (req, res) => {

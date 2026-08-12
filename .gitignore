@@ -6,3 +6,5 @@ dist/
 build/
 *.log
 portfolio.json
+portfolio.backup.json
+portfolio.corrupted-*.json

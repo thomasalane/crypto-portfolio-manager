@@ -26,6 +26,8 @@ export const saveAssets = (assets) =>
 
 export const refreshPrices = () => call('/api/refresh', { method: 'POST' });
 
+export const restorePrevious = () => call('/api/restore', { method: 'POST' });
+
 export const searchAssets = (q) => call(`/api/search?q=${encodeURIComponent(q)}`);
 
 export const ask = (question) =>

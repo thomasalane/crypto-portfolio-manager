@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync, readFileSync, readdirSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { loadPortfolio, savePortfolio, EMPTY_PORTFOLIO } from '../../server/store.js';
@@ -85,5 +85,49 @@ describe('savePortfolio', () => {
   it('leaves no temporary file behind', () => {
     savePortfolio(file, EMPTY_PORTFOLIO);
     expect(readdirSync(dir)).toEqual(['portfolio.json']);
+  });
+});
+
+describe('savePortfolio backups', () => {
+  const withAssets = (quantity) => ({
+    ...EMPTY_PORTFOLIO,
+    assets: [{ id: 'a', symbol: 'A', name: 'A', source: 'coingecko', target: 1, quantity, colorSlot: 1, lastPrice: 1, lastPriceAt: null }],
+  });
+  const backup = () => join(dir, 'portfolio.backup.json');
+
+  it('writes no backup when there was nothing to overwrite', () => {
+    savePortfolio(file, withAssets(1));
+    expect(existsSync(backup())).toBe(false);
+  });
+
+  it('keeps the previous content when overwriting', () => {
+    savePortfolio(file, withAssets(111));
+    savePortfolio(file, withAssets(222));
+
+    expect(JSON.parse(readFileSync(backup(), 'utf8')).assets[0].quantity).toBe(111);
+    expect(loadPortfolio(file).portfolio.assets[0].quantity).toBe(222);
+  });
+
+  it('keeps only the most recent previous version', () => {
+    savePortfolio(file, withAssets(1));
+    savePortfolio(file, withAssets(2));
+    savePortfolio(file, withAssets(3));
+
+    expect(JSON.parse(readFileSync(backup(), 'utf8')).assets[0].quantity).toBe(2);
+  });
+
+  it('does not overwrite the backup when the content is unchanged', () => {
+    savePortfolio(file, withAssets(111));
+    savePortfolio(file, withAssets(222));
+    savePortfolio(file, withAssets(222));
+
+    // A no-op save must not push the real previous version out of the backup.
+    expect(JSON.parse(readFileSync(backup(), 'utf8')).assets[0].quantity).toBe(111);
+  });
+
+  it('never treats the backup as the portfolio itself', () => {
+    savePortfolio(file, withAssets(111));
+    savePortfolio(file, withAssets(222));
+    expect(loadPortfolio(file).portfolio.assets[0].quantity).toBe(222);
   });
 });

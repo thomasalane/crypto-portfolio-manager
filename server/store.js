@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, renameSync, copyFileSync } from 'node:fs';
 
 /** The shape a brand-new install starts from. No assets are ever pre-configured. */
 export const EMPTY_PORTFOLIO = Object.freeze({
@@ -58,7 +58,27 @@ export function loadPortfolio(filePath) {
   };
 }
 
-/** @param {string} filePath @param {object} portfolio */
+/** Where the previous version is parked before every overwrite. */
+export const backupPathFor = (filePath) => filePath.replace(/\.json$/, '') + '.backup.json';
+
+/**
+ * Write the portfolio, keeping the version it replaced.
+ *
+ * A single bad write — a mistaken bulk update, a script run against the wrong
+ * data — otherwise destroys positions the user typed in by hand and that exist
+ * nowhere else. The backup is one step of undo: copy it over portfolio.json.
+ *
+ * @param {string} filePath
+ * @param {object} portfolio
+ */
 export function savePortfolio(filePath, portfolio) {
-  writeFileSync(filePath, JSON.stringify(portfolio, null, 2) + '\n', 'utf8');
+  const next = JSON.stringify(portfolio, null, 2) + '\n';
+
+  if (existsSync(filePath)) {
+    const current = readFileSync(filePath, 'utf8');
+    // An identical save must not push the real previous version out.
+    if (current !== next) copyFileSync(filePath, backupPathFor(filePath));
+  }
+
+  writeFileSync(filePath, next, 'utf8');
 }

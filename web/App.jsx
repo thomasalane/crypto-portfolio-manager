@@ -26,15 +26,18 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const [backupAvailable, setBackupAvailable] = useState(false);
 
   useEffect(() => {
     api
       .getState()
-      .then(({ portfolio: p, warning: w, assistantReady: ready }) => {
+      .then(({ portfolio: p, warning: w, assistantReady: ready, backupAvailable: hasBackup }) => {
         setPortfolio(p);
         setDraft(p.assets);
         setWarning(w);
         setAssistantReady(ready);
+        setBackupAvailable(hasBackup);
       })
       .catch((err) => setWarning(err.message))
       .finally(() => setLoading(false));
@@ -74,11 +77,27 @@ export default function App() {
       const { portfolio: next } = await api.saveAssets(draft);
       setPortfolio(next);
       setDraft(next.assets);
+      setBackupAvailable(true);
       setNotice('Ativos salvos.');
     } catch (err) {
       setErrors(err.message.split(/(?<=\.)\s+/).filter(Boolean));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const restore = async () => {
+    setRestoring(true);
+    setErrors([]);
+    try {
+      const { portfolio: next } = await api.restorePrevious();
+      setPortfolio(next);
+      setDraft(next.assets);
+      setNotice('Versão anterior restaurada. Clique de novo para desfazer.');
+    } catch (err) {
+      setNotice(err.message);
+    } finally {
+      setRestoring(false);
     }
   };
 
@@ -163,10 +182,13 @@ export default function App() {
           assets={draft}
           onChange={setDraft}
           onSave={save}
+          onRestore={restore}
           errors={errors}
           saving={saving}
           dirty={dirty}
           theme={theme}
+          backupAvailable={backupAvailable}
+          restoring={restoring}
         />
       </div>
 
