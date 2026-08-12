@@ -24,14 +24,6 @@ if not exist "dist" (
   call npm run build || goto :failed
 )
 
-if not exist ".env" (
-  echo.
-  echo Note: no .env found. The dashboard works normally, but the
-  echo assistant will be unavailable. Copy .env.example to .env and
-  echo add your API key.
-  echo.
-)
-
 start "" "http://localhost:4173"
 node server/index.js
 goto :eof

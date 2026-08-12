@@ -36,10 +36,3 @@ export const setCurrency = (currency) =>
   });
 
 export const searchAssets = (q) => call(`/api/search?q=${encodeURIComponent(q)}`);
-
-export const ask = (question) =>
-  call('/api/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question }),
-  });

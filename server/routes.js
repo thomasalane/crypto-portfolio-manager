@@ -2,10 +2,8 @@ import { existsSync } from 'node:fs';
 import express from 'express';
 import { loadPortfolio, savePortfolio, backupPathFor } from './store.js';
 import { searchAssets, fetchPrices } from './prices.js';
-import { buildPrompt, askModel } from './chat.js';
 import { validateAssets } from '../core/validation.js';
 import { computeState } from '../core/allocation.js';
-import { planRebalance } from '../core/rebalance.js';
 import { CURRENCIES, isSupported, withPricesIn } from '../core/currency.js';
 
 /** The donut carries four hues; anything past that shares the neutral slice. */
@@ -28,10 +26,10 @@ function assignColorSlots(assets) {
 }
 
 /**
- * @param {{ dataFile: string, apiKey: string, fetchImpl?: typeof fetch }} config
+ * @param {{ dataFile: string, fetchImpl?: typeof fetch }} config
  * @returns {import('express').Express}
  */
-export function createApp({ dataFile, apiKey, fetchImpl = fetch }) {
+export function createApp({ dataFile, fetchImpl = fetch }) {
   const app = express();
   app.use(express.json());
 
@@ -40,7 +38,6 @@ export function createApp({ dataFile, apiKey, fetchImpl = fetch }) {
     res.json({
       portfolio,
       warning,
-      assistantReady: Boolean(apiKey),
       backupAvailable: existsSync(backupPathFor(dataFile)),
       currencies: CURRENCIES,
     });
@@ -147,29 +144,6 @@ export function createApp({ dataFile, apiKey, fetchImpl = fetch }) {
     res.json({
       results: found.map((f) => ({ ...f, prices: prices[f.id] ?? null })),
     });
-  });
-
-  app.post('/api/chat', async (req, res) => {
-    const question = String(req.body?.question ?? '').trim();
-    if (!question) return res.status(400).json({ error: 'Write a question first.' });
-
-    const { portfolio } = loadPortfolio(dataFile);
-    const priced = withPricesIn(portfolio.assets, portfolio.currency);
-    const { total, rows } = computeState(priced);
-    const { orders } = planRebalance(priced);
-
-    const prompt = buildPrompt(
-      { currency: portfolio.currency, total, rows, rebalanceOrders: orders },
-      question
-    );
-
-    try {
-      const answer = await askModel(prompt, apiKey, fetchImpl);
-      res.json({ answer });
-    } catch (err) {
-      // Isolated on purpose: the dashboard keeps working without the assistant.
-      res.status(502).json({ error: err.message });
-    }
   });
 
   return app;

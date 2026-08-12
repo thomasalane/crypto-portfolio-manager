@@ -10,7 +10,6 @@ import DeviationBars from './components/DeviationBars.jsx';
 import ActionDeck from './components/ActionDeck.jsx';
 import HistoryChart from './components/HistoryChart.jsx';
 import AssetEditor from './components/AssetEditor.jsx';
-import ChatWidget from './components/ChatWidget.jsx';
 
 const readTheme = () => document.documentElement.getAttribute('data-theme') ?? 'dark';
 
@@ -18,7 +17,6 @@ export default function App() {
   const [portfolio, setPortfolio] = useState(null);
   const [draft, setDraft] = useState([]);
   const [warning, setWarning] = useState(null);
-  const [assistantReady, setAssistantReady] = useState(false);
   const [errors, setErrors] = useState([]);
   const [notice, setNotice] = useState(null);
   const [staleSymbols, setStaleSymbols] = useState([]);
@@ -34,11 +32,10 @@ export default function App() {
   useEffect(() => {
     api
       .getState()
-      .then(({ portfolio: p, warning: w, assistantReady: ready, backupAvailable: hasBackup }) => {
+      .then(({ portfolio: p, warning: w, backupAvailable: hasBackup }) => {
         setPortfolio(p);
         setDraft(p.assets);
         setWarning(w);
-        setAssistantReady(ready);
         setBackupAvailable(hasBackup);
       })
       .catch((err) => setWarning(err.message))
@@ -154,82 +151,78 @@ export default function App() {
   const hasAssets = saved.length > 0;
 
   return (
-    <>
-      <div className="app">
-        <div className="top">
-          <span className="brand">Portfolio</span>
-          <div className="switch" role="group" aria-label="Display currency">
-            {CURRENCIES.map((c) => (
-              <button
-                key={c}
-                className={`btn quiet ${c === currency ? 'on' : ''}`}
-                onClick={() => changeCurrency(c)}
-                disabled={switchingCurrency}
-                aria-pressed={c === currency}
-              >
-                {CURRENCY_META[c].label}
-              </button>
-            ))}
-          </div>
-          <span className="grow" />
-          <button className="btn icon" onClick={toggleTheme} aria-label="Toggle light and dark mode">
-            {theme === 'dark' ? '☀' : '☾'}
-          </button>
-          <button className="btn" onClick={refresh} disabled={refreshing || !hasAssets}>
-            {refreshing ? 'Refreshing…' : 'Refresh prices'}
-          </button>
+    <div className="app">
+      <div className="top">
+        <span className="brand">Portfolio</span>
+        <div className="switch" role="group" aria-label="Display currency">
+          {CURRENCIES.map((c) => (
+            <button
+              key={c}
+              className={`btn quiet ${c === currency ? 'on' : ''}`}
+              onClick={() => changeCurrency(c)}
+              disabled={switchingCurrency}
+              aria-pressed={c === currency}
+            >
+              {CURRENCY_META[c].label}
+            </button>
+          ))}
         </div>
-
-        {warning && <div className="banner warn">{warning}</div>}
-        {notice && <div className="banner">{notice}</div>}
-
-        {hasAssets ? (
-          <>
-            <Plates rows={rows} total={total} currency={currency} />
-            <Donut rows={rows} total={total} theme={theme} currency={currency} />
-            <DeviationBars
-              rows={rows}
-              total={total}
-              theme={theme}
-              projection={projection}
-              staleSymbols={staleSymbols}
-              currency={currency}
-            />
-            <ActionDeck
-              amount={amount}
-              onAmountChange={setAmount}
-              contribution={contribution}
-              rebalance={rebalance}
-              currency={currency}
-            />
-            <HistoryChart history={historyIn(portfolio.history, currency)} currency={currency} />
-          </>
-        ) : (
-          <div className="empty">
-            <h2>No assets yet</h2>
-            <p>
-              Start by adding an asset and setting its target. You decide which assets to
-              track and what share each one should hold — nothing comes pre-configured.
-            </p>
-          </div>
-        )}
-
-        <AssetEditor
-          assets={draft}
-          onChange={setDraft}
-          onSave={save}
-          onRestore={restore}
-          errors={errors}
-          saving={saving}
-          dirty={dirty}
-          theme={theme}
-          backupAvailable={backupAvailable}
-          restoring={restoring}
-          currency={currency}
-        />
+        <span className="grow" />
+        <button className="btn icon" onClick={toggleTheme} aria-label="Toggle light and dark mode">
+          {theme === 'dark' ? '☀' : '☾'}
+        </button>
+        <button className="btn" onClick={refresh} disabled={refreshing || !hasAssets}>
+          {refreshing ? 'Refreshing…' : 'Refresh prices'}
+        </button>
       </div>
 
-      <ChatWidget ready={assistantReady} />
-    </>
+      {warning && <div className="banner warn">{warning}</div>}
+      {notice && <div className="banner">{notice}</div>}
+
+      {hasAssets ? (
+        <>
+          <Plates rows={rows} total={total} currency={currency} />
+          <Donut rows={rows} total={total} theme={theme} currency={currency} />
+          <DeviationBars
+            rows={rows}
+            total={total}
+            theme={theme}
+            projection={projection}
+            staleSymbols={staleSymbols}
+            currency={currency}
+          />
+          <ActionDeck
+            amount={amount}
+            onAmountChange={setAmount}
+            contribution={contribution}
+            rebalance={rebalance}
+            currency={currency}
+          />
+          <HistoryChart history={historyIn(portfolio.history, currency)} currency={currency} />
+        </>
+      ) : (
+        <div className="empty">
+          <h2>No assets yet</h2>
+          <p>
+            Start by adding an asset and setting its target. You decide which assets to track
+            and what share each one should hold — nothing comes pre-configured.
+          </p>
+        </div>
+      )}
+
+      <AssetEditor
+        assets={draft}
+        onChange={setDraft}
+        onSave={save}
+        onRestore={restore}
+        errors={errors}
+        saving={saving}
+        dirty={dirty}
+        theme={theme}
+        backupAvailable={backupAvailable}
+        restoring={restoring}
+        currency={currency}
+      />
+    </div>
   );
 }

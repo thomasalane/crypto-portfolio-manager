@@ -6,18 +6,11 @@ import { createApp } from './routes.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-// Node reads .env natively; a missing file is fine — only the assistant needs it.
-try {
-  process.loadEnvFile(join(root, '.env'));
-} catch {
-  // no .env present
-}
-
 const PORT = Number(process.env.PORT) || 4173;
 const dataFile = join(root, 'portfolio.json');
 const dist = join(root, 'dist');
 
-const app = createApp({ dataFile, apiKey: process.env.GEMINI_API_KEY ?? '' });
+const app = createApp({ dataFile });
 
 if (existsSync(dist)) {
   app.use(express.static(dist));
@@ -29,8 +22,5 @@ app.listen(PORT, () => {
   console.log(`Portfolio running at http://localhost:${PORT}`);
   if (!existsSync(dist)) {
     console.log('The interface has not been built yet. Run "npm run build".');
-  }
-  if (!process.env.GEMINI_API_KEY) {
-    console.log('GEMINI_API_KEY is not set — the assistant will be unavailable.');
   }
 });

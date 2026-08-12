@@ -4,7 +4,7 @@
 
 A local web app that compares a crypto portfolio against a target allocation and calculates what to buy or sell to close the gap.
 
-Built with **Node.js**, **React** and **Vite**, it reads prices from the **CoinGecko** API and includes an assistant powered by **Google Gemini** that answers questions about the portfolio.
+Built with **Node.js**, **React** and **Vite**, it reads live prices from the **CoinGecko** API.
 
 Every asset and every target is added by the user — nothing comes pre-configured.
 

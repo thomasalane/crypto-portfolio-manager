@@ -18,7 +18,7 @@ const seed = (assets, history = []) =>
   writeFileSync(dataFile, JSON.stringify({ version: 1, currency: 'usd', assets, history }));
 
 const app = (over = {}) =>
-  createApp({ dataFile, apiKey: 'test-key', fetchImpl: async () => { throw new Error('unexpected network call'); }, ...over });
+  createApp({ dataFile, fetchImpl: async () => { throw new Error('unexpected network call'); }, ...over });
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'cpm-routes-'));
@@ -59,13 +59,6 @@ describe('GET /api/state', () => {
     await request(app()).put('/api/assets').send({ assets: [asset({ quantity: 99 })] });
     const res = await request(app()).get('/api/state');
     expect(res.body.backupAvailable).toBe(true);
-  });
-
-  it('reports whether the assistant is configured', async () => {
-    const withKey = await request(app()).get('/api/state');
-    expect(withKey.body.assistantReady).toBe(true);
-    const without = await request(app({ apiKey: '' })).get('/api/state');
-    expect(without.body.assistantReady).toBe(false);
   });
 });
 
@@ -282,49 +275,5 @@ describe('GET /api/search', () => {
     const res = await request(app({ fetchImpl })).get('/api/search?q=bit');
     expect(res.status).toBe(502);
     expect(res.body.error).toMatch(/rate limit/i);
-  });
-});
-
-describe('POST /api/chat', () => {
-  it('answers using the model', async () => {
-    seed([asset()]);
-    const fetchImpl = async () => ({
-      ok: true, status: 200,
-      json: async () => ({ candidates: [{ content: { parts: [{ text: 'resposta do modelo' }] } }] }),
-    });
-    const res = await request(app({ fetchImpl })).post('/api/chat').send({ question: 'e aí?' });
-    expect(res.status).toBe(200);
-    expect(res.body.answer).toBe('resposta do modelo');
-  });
-
-  it('sends the portfolio state in the prompt', async () => {
-    seed([asset({ symbol: 'ZZZ' })]);
-    let body = null;
-    const fetchImpl = async (_url, init) => {
-      body = JSON.parse(init.body);
-      return { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }) };
-    };
-    await request(app({ fetchImpl })).post('/api/chat').send({ question: 'oi' });
-    expect(body.contents[0].parts[0].text).toContain('ZZZ');
-  });
-
-  it('rejects an empty question', async () => {
-    const res = await request(app()).post('/api/chat').send({ question: '   ' });
-    expect(res.status).toBe(400);
-  });
-
-  it('reports a missing key without touching the network', async () => {
-    const res = await request(app({ apiKey: '' })).post('/api/chat').send({ question: 'oi' });
-    expect(res.status).toBe(502);
-    expect(res.body.error).toMatch(/api key/i);
-  });
-
-  it('does not let a chat failure affect the dashboard', async () => {
-    seed([asset()]);
-    const fetchImpl = async () => ({ ok: false, status: 500, json: async () => ({}) });
-    await request(app({ fetchImpl })).post('/api/chat').send({ question: 'oi' });
-    const res = await request(app()).get('/api/state');
-    expect(res.status).toBe(200);
-    expect(res.body.portfolio.assets).toHaveLength(1);
   });
 });
