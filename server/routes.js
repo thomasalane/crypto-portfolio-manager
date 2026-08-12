@@ -86,12 +86,29 @@ export function createApp({ dataFile, apiKey, fetchImpl = fetch }) {
   });
 
   app.get('/api/search', async (req, res) => {
+    let found;
     try {
-      const results = await searchAssets(req.query.q ?? '', fetchImpl);
-      res.json({ results });
+      found = await searchAssets(req.query.q ?? '', fetchImpl);
     } catch (err) {
-      res.status(502).json({ error: err.message });
+      return res.status(502).json({ error: err.message });
     }
+
+    // Quote every hit so the user picks knowing the price, and the asset lands
+    // already priced instead of waiting for the next refresh. A failure here is
+    // not worth losing the search over — the results still go out, unpriced.
+    let prices = {};
+    if (found.length > 0) {
+      const { portfolio } = loadPortfolio(dataFile);
+      try {
+        prices = await fetchPrices(found.map((f) => f.id), portfolio.currency, fetchImpl);
+      } catch {
+        prices = {};
+      }
+    }
+
+    res.json({
+      results: found.map((f) => ({ ...f, price: prices[f.id] ?? null })),
+    });
   });
 
   app.post('/api/chat', async (req, res) => {

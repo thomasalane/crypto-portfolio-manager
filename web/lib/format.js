@@ -6,6 +6,17 @@ export const money = (value, digits = 2) =>
     maximumFractionDigits: digits,
   });
 
+/**
+ * Prices span many orders of magnitude — $63.940 and $0,00000004 both show up.
+ * Pick the decimals from the magnitude so small coins do not read as zero.
+ */
+export const price = (value) => {
+  const n = Number(value) || 0;
+  if (n === 0) return '0,00';
+  const digits = n >= 1 ? 2 : n >= 0.01 ? 4 : 8;
+  return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: digits });
+};
+
 /** A fraction (0.5) rendered as a percentage string ("50,0"). */
 export const pct = (fraction, digits = 1) =>
   ((Number(fraction) || 0) * 100).toLocaleString('pt-BR', {

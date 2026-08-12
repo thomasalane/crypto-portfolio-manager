@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { colorForSlot } from '../lib/colors.js';
 import { searchAssets } from '../lib/api.js';
-import { pct, money } from '../lib/format.js';
+import { pct, price } from '../lib/format.js';
 
 /**
  * Everything about which assets exist and what they are aiming at. Nothing is
@@ -23,6 +23,7 @@ export default function AssetEditor({ assets, onChange, onSave, errors, saving, 
 
   const add = (found) => {
     if (assets.some((a) => a.id === found.id)) return;
+    const priced = typeof found.price === 'number';
     onChange([
       ...assets,
       {
@@ -33,8 +34,9 @@ export default function AssetEditor({ assets, onChange, onSave, errors, saving, 
         target: 0,
         quantity: 0,
         colorSlot: undefined,
-        lastPrice: found.source === 'manual' ? 0 : null,
-        lastPriceAt: null,
+        // The search already quoted it, so the asset arrives priced.
+        lastPrice: priced ? found.price : found.source === 'manual' ? 0 : null,
+        lastPriceAt: priced ? new Date().toISOString() : null,
       },
     ]);
     setQuery('');
@@ -138,7 +140,7 @@ export default function AssetEditor({ assets, onChange, onSave, errors, saving, 
                     />
                   ) : (
                     <span className="num" style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
-                      {a.lastPrice ? `$${money(a.lastPrice, a.lastPrice < 1 ? 4 : 2)}` : '—'}
+                      {a.lastPrice ? `$${price(a.lastPrice)}` : '—'}
                     </span>
                   )}
                 </td>
@@ -200,6 +202,11 @@ export default function AssetEditor({ assets, onChange, onSave, errors, saving, 
               <button type="button" key={r.id} onClick={() => add(r)}>
                 <span className="rs">{r.symbol}</span>
                 <span className="rn">{r.name}</span>
+                <span className="rp num">
+                  {typeof r.price === 'number'
+                    ? `$${price(r.price)}`
+                    : 'sem cotação'}
+                </span>
               </button>
             ))}
           </div>

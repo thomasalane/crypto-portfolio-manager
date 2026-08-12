@@ -159,14 +159,46 @@ describe('POST /api/refresh', () => {
   });
 });
 
+/** Search hits /search first, then /simple/price for the ids it found. */
+const searchThenPrice = (coins, prices) => async (url) => {
+  if (url.includes('/search')) {
+    return { ok: true, status: 200, json: async () => ({ coins }) };
+  }
+  return { ok: true, status: 200, json: async () => prices };
+};
+
 describe('GET /api/search', () => {
-  it('passes results through', async () => {
-    const fetchImpl = async () => ({
-      ok: true, status: 200,
-      json: async () => ({ coins: [{ id: 'bitcoin', symbol: 'btc', name: 'Bitcoin' }] }),
-    });
+  it('passes results through with the current price attached', async () => {
+    const fetchImpl = searchThenPrice(
+      [{ id: 'bitcoin', symbol: 'btc', name: 'Bitcoin' }],
+      { bitcoin: { usd: 63940 } }
+    );
     const res = await request(app({ fetchImpl })).get('/api/search?q=bit');
-    expect(res.body.results).toEqual([{ id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin' }]);
+    expect(res.body.results).toEqual([
+      { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', price: 63940 },
+    ]);
+  });
+
+  it('returns a null price for a result CoinGecko does not quote', async () => {
+    const fetchImpl = searchThenPrice(
+      [{ id: 'ghost', symbol: 'ghs', name: 'Ghost' }],
+      {}
+    );
+    const res = await request(app({ fetchImpl })).get('/api/search?q=ghost');
+    expect(res.body.results[0].price).toBeNull();
+  });
+
+  it('still returns the results when the price lookup fails', async () => {
+    const fetchImpl = async (url) => {
+      if (url.includes('/search')) {
+        return { ok: true, status: 200, json: async () => ({ coins: [{ id: 'bitcoin', symbol: 'btc', name: 'Bitcoin' }] }) };
+      }
+      return { ok: false, status: 429, json: async () => ({}) };
+    };
+    const res = await request(app({ fetchImpl })).get('/api/search?q=bit');
+    expect(res.status).toBe(200);
+    expect(res.body.results[0].symbol).toBe('BTC');
+    expect(res.body.results[0].price).toBeNull();
   });
 
   it('returns an empty list for a missing query', async () => {
