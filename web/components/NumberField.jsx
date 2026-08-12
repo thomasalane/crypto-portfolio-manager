@@ -3,35 +3,60 @@ import { useEffect, useState } from 'react';
 /**
  * A numeric input that keeps what the user typed.
  *
- * Deriving the displayed text from the model on every keystroke breaks as soon
- * as the field is cleared: the empty string parses to 0, the field re-renders
- * as "0", and the next digit lands to its right ("05"). React will not tidy
- * that up either — for `type="number"` it only rewrites the DOM when
- * `node.value != value`, and loose equality reads "05" as already equal to 5.
+ * Two problems rule out `type="number"` here. First, deriving the displayed
+ * text from the model on every keystroke breaks as soon as the field is
+ * cleared: the empty string parses to 0, the field re-renders as "0", and the
+ * next digit lands to its right ("05"). React will not tidy that up either —
+ * for number inputs it only rewrites the DOM when `node.value != value`, and
+ * loose equality reads "05" as already equal to 5. Second, a number input
+ * sanitises half-typed values, so "7," never survives long enough to become
+ * "7,5".
  *
- * So the text is state here, and the number is derived from it. Clearing the
- * field shows an empty field, not a zero.
+ * So this is a text field with a numeric keypad: the text is state, the number
+ * is derived from it, and both "," and "." work as the decimal separator.
  */
+
+/** Digits with at most one separator — what a half-typed number looks like. */
+const ACCEPTED = /^[0-9]*[.,]?[0-9]*$/;
+
+const toNumber = (text) => {
+  const normalised = text.replace(',', '.');
+  const parsed = Number(normalised);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+/** Show the separator the user is likely to type. */
+const toText = (value) => String(value ?? '').replace('.', ',');
+
 export default function NumberField({ value, onChange, ...props }) {
-  const [draft, setDraft] = useState(() => String(value ?? ''));
+  const [draft, setDraft] = useState(() => toText(value));
 
   // Re-sync when the value changes from somewhere else — a save, a restore, a
   // price refresh — but leave the draft alone while it still means the same
   // number, so typing is never interrupted.
   useEffect(() => {
-    setDraft((current) => (Number(current) === Number(value) ? current : String(value ?? '')));
+    setDraft((current) => (toNumber(current) === Number(value) ? current : toText(value)));
   }, [value]);
 
   const handle = (e) => {
     const raw = e.target.value;
+    if (!ACCEPTED.test(raw)) return; // ignore letters, signs, a second separator
     setDraft(raw);
-    if (raw.trim() === '') return onChange(0);
-    const parsed = Number(raw);
-    if (Number.isFinite(parsed)) onChange(parsed);
+    onChange(raw.trim() === '' ? 0 : toNumber(raw));
   };
 
-  // An empty field reads as 0 but shows nothing; on the way out it is spelled.
-  const blur = () => setDraft(String(Number(draft) || 0));
+  // An empty or half-typed field reads as 0 but shows nothing until focus
+  // leaves; on the way out it is spelled properly.
+  const blur = () => setDraft(toText(toNumber(draft)));
 
-  return <input {...props} value={draft} onChange={handle} onBlur={blur} />;
+  return (
+    <input
+      {...props}
+      type="text"
+      inputMode="decimal"
+      value={draft}
+      onChange={handle}
+      onBlur={blur}
+    />
+  );
 }

@@ -118,10 +118,6 @@ export default function AssetEditor({
                 <td>
                   <NumberField
                     className="narrow"
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
                     value={Number((a.target * 100).toFixed(4))}
                     onChange={(next) => patch(a.id, { target: next / 100 })}
                     aria-label={`Meta de ${a.symbol} em porcentagem`}
@@ -129,9 +125,6 @@ export default function AssetEditor({
                 </td>
                 <td>
                   <NumberField
-                    type="number"
-                    min="0"
-                    step="any"
                     value={a.quantity}
                     onChange={(next) => patch(a.id, { quantity: next })}
                     aria-label={`Quantidade de ${a.symbol}`}
@@ -141,9 +134,6 @@ export default function AssetEditor({
                   {a.source === 'manual' ? (
                     <NumberField
                       className="narrow"
-                      type="number"
-                      min="0"
-                      step="any"
                       value={a.prices?.[currency] ?? 0}
                       onChange={(next) =>
                         patch(a.id, { prices: { ...a.prices, [currency]: next } })
