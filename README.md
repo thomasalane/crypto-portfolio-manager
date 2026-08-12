@@ -10,16 +10,11 @@ Every asset and every target is added by the user — nothing comes pre-configur
 
 ## 🚀 Features
 
-- Target allocation per asset, validated to sum to 100%
-- Any asset on CoinGecko, quoted as you search so it arrives already priced — or a manual one with a price you set yourself
-- Prices fetched on demand, keeping the free API tier within its limits
+- Target allocation defined per asset, validated to sum to 100%
 - Two-ring donut comparing the target allocation against the current one
 - Deviation bars showing the distance to target as distance, not just a number
-- Contribution planner — enter an amount and see what to buy, projected onto the bars
+- Contribution planner — enter an amount and see what to buy
 - Full rebalance — the sells that fund the buys to bring every asset back to target
-- Portfolio value history, recorded on each price refresh
-- USD and BRL, switched instantly — CoinGecko quotes both, so nothing is converted or refetched
-- Every save keeps the version it replaced, so one click undoes it
-- Dark and light themes
+- USD and BRL
 
 > **Note:** the app interface is in Portuguese.
