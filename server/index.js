@@ -26,11 +26,11 @@ if (existsSync(dist)) {
 }
 
 app.listen(PORT, () => {
-  console.log(`Portfolio rodando em http://localhost:${PORT}`);
+  console.log(`Portfolio running at http://localhost:${PORT}`);
   if (!existsSync(dist)) {
-    console.log('A interface ainda não foi construída. Rode "npm run build".');
+    console.log('The interface has not been built yet. Run "npm run build".');
   }
   if (!process.env.GEMINI_API_KEY) {
-    console.log('GEMINI_API_KEY não configurada — o assistente ficará indisponível.');
+    console.log('GEMINI_API_KEY is not set — the assistant will be unavailable.');
   }
 });

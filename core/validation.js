@@ -1,9 +1,9 @@
-/** Portfolio shape rules. Pure — no I/O. Messages are user-facing Portuguese. */
+/** Portfolio shape rules. Pure — no I/O. Messages are user-facing. */
 
 export const TARGET_SUM_TOLERANCE = 0.0001;
 
 const pct = (fraction) =>
-  (fraction * 100).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  (fraction * 100).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 /**
  * @param {Array} assets
@@ -16,21 +16,21 @@ export function validateAssets(assets) {
 
   const seen = new Set();
   for (const a of assets) {
-    const label = a.symbol || a.id || 'ativo sem nome';
+    const label = a.symbol || a.id || 'an unnamed asset';
 
     if (!a.id) {
-      errors.push('Um ativo está sem identificador.');
+      errors.push('An asset is missing its identifier.');
     } else if (seen.has(a.id)) {
-      errors.push(`O ativo ${label} está repetido.`);
+      errors.push(`${label} is listed twice.`);
     } else {
       seen.add(a.id);
     }
 
     if (!(Number(a.target) >= 0)) {
-      errors.push(`A meta de ${label} não pode ser negativa.`);
+      errors.push(`The target for ${label} cannot be negative.`);
     }
     if (!(Number(a.quantity) >= 0)) {
-      errors.push(`A quantidade de ${label} não pode ser negativa.`);
+      errors.push(`The quantity of ${label} cannot be negative.`);
     }
   }
 
@@ -39,8 +39,8 @@ export function validateAssets(assets) {
   if (Math.abs(diff) > TARGET_SUM_TOLERANCE) {
     errors.push(
       diff < 0
-        ? `As metas somam ${pct(sum)}%. Falta ${pct(-diff)}% para fechar em 100%.`
-        : `As metas somam ${pct(sum)}%. Sobra ${pct(diff)}% para fechar em 100%.`
+        ? `Targets add up to ${pct(sum)}%. ${pct(-diff)}% short of 100%.`
+        : `Targets add up to ${pct(sum)}%. ${pct(diff)}% over 100%.`
     );
   }
 

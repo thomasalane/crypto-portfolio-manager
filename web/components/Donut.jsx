@@ -26,7 +26,7 @@ function toSegments(rows, theme) {
   if (rest.length > 0) {
     segments.push({
       key: '__outros__',
-      label: 'Outros',
+      label: 'Other',
       color: neutralColor(theme),
       actual: rest.reduce((s, r) => s + r.actual, 0),
       target: rest.reduce((s, r) => s + r.target, 0),
@@ -68,10 +68,10 @@ export default function Donut({ rows, total, theme, currency }) {
 
   return (
     <div className="sec">
-      <h2>Como está × como você quer</h2>
+      <h2>Where it stands against where you want it</h2>
       <p className="hint">
-        Anel externo: a meta que você definiu. Anel interno: o que você tem hoje. Onde as bordas
-        não coincidem, há desvio.
+        Outer ring: the target you set. Inner ring: what you hold today. Wherever the edges do
+        not line up, there is a gap.
       </p>
 
       <div className="split">
@@ -83,8 +83,8 @@ export default function Donut({ rows, total, theme, currency }) {
               height={SIZE}
               viewBox={`0 0 ${SIZE} ${SIZE}`}
               role="img"
-              aria-label={`Distribuição atual comparada à meta. ${rows
-                .map((r) => `${r.symbol}: hoje ${pct(r.actual)}%, meta ${pct(r.target)}%`)
+              aria-label={`Current allocation compared with the target. ${rows
+                .map((r) => `${r.symbol}: today ${pct(r.actual)}%, target ${pct(r.target)}%`)
                 .join('. ')}`}
             >
               <g transform={`rotate(-90 ${CENTER} ${CENTER})`}>
@@ -98,18 +98,18 @@ export default function Donut({ rows, total, theme, currency }) {
             </div>
           </div>
           <div className="ringkey">
-            <span><i className="sw-o" /> meta</span>
-            <span><i className="sw-i" /> hoje</span>
+            <span><i className="sw-o" /> target</span>
+            <span><i className="sw-i" /> today</span>
           </div>
         </div>
 
         <table className="legend">
           <thead>
             <tr>
-              <th>Ativo</th>
-              <th>Você tem</th>
-              <th>Sua meta</th>
-              <th>Situação</th>
+              <th>Asset</th>
+              <th>You hold</th>
+              <th>Your target</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -125,9 +125,9 @@ export default function Donut({ rows, total, theme, currency }) {
                 <td className="num">{pct(r.target)}%</td>
                 <td className={`st ${r.onTarget ? 'on' : 'off'}`}>
                   {r.onTarget
-                    ? 'na meta'
+                    ? 'on target'
                     : `${r.deviation > 0 ? '▲' : '▼'} ${points(r.deviation).replace(/^[+−]/, '')} ${
-                        r.deviation > 0 ? 'acima' : 'abaixo'
+                        r.deviation > 0 ? 'over' : 'under'
                       }`}
                 </td>
               </tr>

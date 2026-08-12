@@ -43,7 +43,7 @@ describe('loadPortfolio', () => {
     writeFileSync(file, '{ this is not json');
     const { portfolio, warning } = loadPortfolio(file);
     expect(portfolio).toEqual(EMPTY_PORTFOLIO);
-    expect(warning).toContain('não pôde ser lido');
+    expect(warning).toContain('could not be read');
     const quarantined = readdirSync(dir).filter((f) => f.startsWith('portfolio.corrupted-'));
     expect(quarantined).toHaveLength(1);
   });

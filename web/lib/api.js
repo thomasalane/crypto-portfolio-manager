@@ -5,12 +5,12 @@ async function call(url, init) {
   try {
     res = await fetch(url, init);
   } catch {
-    throw new Error('Não foi possível falar com o servidor. Ele ainda está rodando?');
+    throw new Error('Could not reach the server. Is it still running?');
   }
 
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(body.error ?? body.errors?.join(' ') ?? `Erro ${res.status}.`);
+    throw new Error(body.error ?? body.errors?.join(' ') ?? `Error ${res.status}.`);
   }
   return body;
 }

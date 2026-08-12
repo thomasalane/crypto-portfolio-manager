@@ -13,7 +13,8 @@ import { useEffect, useState } from 'react';
  * "7,5".
  *
  * So this is a text field with a numeric keypad: the text is state, the number
- * is derived from it, and both "," and "." work as the decimal separator.
+ * is derived from it, and both "," and "." work as the decimal separator — the
+ * comma is kept while typing and spelled as a dot once focus leaves.
  */
 
 /** Digits with at most one separator — what a half-typed number looks like. */
@@ -25,8 +26,8 @@ const toNumber = (text) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-/** Show the separator the user is likely to type. */
-const toText = (value) => String(value ?? '').replace('.', ',');
+/** The display uses a dot; a typed comma is accepted and normalised on blur. */
+const toText = (value) => String(value ?? '');
 
 export default function NumberField({ value, onChange, ...props }) {
   const [draft, setDraft] = useState(() => toText(value));

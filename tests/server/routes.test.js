@@ -46,7 +46,7 @@ describe('GET /api/state', () => {
     writeFileSync(dataFile, 'not json at all');
     const res = await request(app()).get('/api/state');
     expect(res.status).toBe(200);
-    expect(res.body.warning).toMatch(/não pôde ser lido/);
+    expect(res.body.warning).toMatch(/could not be read/);
   });
 
   it('reports that no earlier version exists on a fresh install', async () => {
@@ -79,7 +79,7 @@ describe('PUT /api/assets', () => {
   it('rejects targets that do not sum to 100%', async () => {
     const res = await request(app()).put('/api/assets').send({ assets: [asset({ target: 0.5 })] });
     expect(res.status).toBe(400);
-    expect(res.body.errors[0]).toMatch(/Falta/);
+    expect(res.body.errors[0]).toMatch(/short of 100%/);
   });
 
   it('does not write anything when validation fails', async () => {
@@ -165,7 +165,7 @@ describe('POST /api/restore', () => {
   it('refuses when there is no earlier version', async () => {
     const res = await request(app()).post('/api/restore');
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/versão anterior/i);
+    expect(res.body.error).toMatch(/no earlier version/i);
   });
 
   it('keeps the replaced version so a restore can be undone', async () => {
@@ -281,7 +281,7 @@ describe('GET /api/search', () => {
     const fetchImpl = async () => ({ ok: false, status: 429, json: async () => ({}) });
     const res = await request(app({ fetchImpl })).get('/api/search?q=bit');
     expect(res.status).toBe(502);
-    expect(res.body.error).toMatch(/limite/i);
+    expect(res.body.error).toMatch(/rate limit/i);
   });
 });
 
@@ -316,7 +316,7 @@ describe('POST /api/chat', () => {
   it('reports a missing key without touching the network', async () => {
     const res = await request(app({ apiKey: '' })).post('/api/chat').send({ question: 'oi' });
     expect(res.status).toBe(502);
-    expect(res.body.error).toMatch(/chave/i);
+    expect(res.body.error).toMatch(/api key/i);
   });
 
   it('does not let a chat failure affect the dashboard', async () => {

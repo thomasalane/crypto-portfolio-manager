@@ -37,21 +37,21 @@ export default function ChatWidget({ ready }) {
   return (
     <>
       <button className="fab" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-        {open ? 'Fechar' : 'Perguntar'}
+        {open ? 'Close' : 'Ask'}
       </button>
 
       {open && (
         <div className="sheet">
           <div className="sh">
-            <span className="cap">Assistente do portfolio</span>
+            <span className="cap">Portfolio assistant</span>
           </div>
 
           <div className="log" ref={logRef}>
             {log.length === 0 && (
               <p className="empty-note">
                 {ready
-                  ? 'Pergunte sobre os seus ativos, as metas ou o que o rebalanceamento faria.'
-                  : 'O assistente precisa de uma chave da API. Coloque GEMINI_API_KEY no arquivo .env e reinicie o servidor.'}
+                  ? 'Ask about your assets, your targets, or what rebalancing would do.'
+                  : 'The assistant needs an API key. Add GEMINI_API_KEY to the .env file and restart the server.'}
               </p>
             )}
             {log.map((m, i) => (
@@ -59,20 +59,20 @@ export default function ChatWidget({ ready }) {
                 {m.text}
               </div>
             ))}
-            {busy && <div className="msg bot">Pensando…</div>}
+            {busy && <div className="msg bot">Thinking…</div>}
           </div>
 
           <form className="ft" onSubmit={send}>
             <input
               type="text"
-              placeholder="Perguntar sobre o portfolio…"
+              placeholder="Ask about the portfolio…"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              aria-label="Mensagem"
+              aria-label="Message"
               disabled={!ready}
             />
             <button className="btn" type="submit" disabled={!ready || busy || !question.trim()}>
-              Enviar
+              Send
             </button>
           </form>
         </div>

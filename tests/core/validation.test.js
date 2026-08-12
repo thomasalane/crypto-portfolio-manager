@@ -32,7 +32,7 @@ describe('validateAssets', () => {
   it('rejects targets that sum to less than 1 and says how much is missing', () => {
     const result = validateAssets([asset({ target: 0.9 })]);
     expect(result.ok).toBe(false);
-    expect(result.errors[0]).toContain('10,0');
+    expect(result.errors[0]).toContain('10.0% short');
   });
 
   it('rejects targets that sum to more than 1', () => {
@@ -41,7 +41,7 @@ describe('validateAssets', () => {
       asset({ id: 'b', target: 0.4 }),
     ]);
     expect(result.ok).toBe(false);
-    expect(result.errors[0]).toContain('20,0');
+    expect(result.errors[0]).toContain('20.0% over');
   });
 
   it('rejects a negative target', () => {
@@ -50,13 +50,13 @@ describe('validateAssets', () => {
       asset({ id: 'b', target: 1.1 }),
     ]);
     expect(result.ok).toBe(false);
-    expect(result.errors.some((e) => e.includes('negativa'))).toBe(true);
+    expect(result.errors.some((e) => e.includes('cannot be negative'))).toBe(true);
   });
 
   it('rejects a negative quantity', () => {
     const result = validateAssets([asset({ quantity: -1 })]);
     expect(result.ok).toBe(false);
-    expect(result.errors.some((e) => e.includes('negativa'))).toBe(true);
+    expect(result.errors.some((e) => e.includes('cannot be negative'))).toBe(true);
   });
 
   it('rejects duplicate ids', () => {
@@ -65,7 +65,7 @@ describe('validateAssets', () => {
       asset({ id: 'same', target: 0.5 }),
     ]);
     expect(result.ok).toBe(false);
-    expect(result.errors.some((e) => e.includes('repetido'))).toBe(true);
+    expect(result.errors.some((e) => e.includes('listed twice'))).toBe(true);
   });
 
   it('rejects an asset with no id', () => {

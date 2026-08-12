@@ -49,7 +49,7 @@ export function createApp({ dataFile, apiKey, fetchImpl = fetch }) {
   app.post('/api/restore', (req, res) => {
     const backup = backupPathFor(dataFile);
     if (!existsSync(backup)) {
-      return res.status(400).json({ error: 'Não há versão anterior guardada.' });
+      return res.status(400).json({ error: 'There is no earlier version to go back to.' });
     }
 
     // savePortfolio parks the current version as it writes, so restoring is
@@ -62,7 +62,7 @@ export function createApp({ dataFile, apiKey, fetchImpl = fetch }) {
   app.put('/api/currency', (req, res) => {
     const currency = req.body?.currency;
     if (!isSupported(currency)) {
-      return res.status(400).json({ error: 'Moeda não suportada.' });
+      return res.status(400).json({ error: 'That currency is not supported.' });
     }
 
     // Every asset already carries a price in both currencies, so switching is
@@ -76,7 +76,7 @@ export function createApp({ dataFile, apiKey, fetchImpl = fetch }) {
   app.put('/api/assets', (req, res) => {
     const incoming = req.body?.assets;
     if (!Array.isArray(incoming)) {
-      return res.status(400).json({ errors: ['O corpo da requisição precisa conter uma lista de ativos.'] });
+      return res.status(400).json({ errors: ['The request body must contain a list of assets.'] });
     }
 
     const assets = assignColorSlots(incoming);
@@ -151,7 +151,7 @@ export function createApp({ dataFile, apiKey, fetchImpl = fetch }) {
 
   app.post('/api/chat', async (req, res) => {
     const question = String(req.body?.question ?? '').trim();
-    if (!question) return res.status(400).json({ error: 'Escreva uma pergunta.' });
+    if (!question) return res.status(400).json({ error: 'Write a question first.' });
 
     const { portfolio } = loadPortfolio(dataFile);
     const priced = withPricesIn(portfolio.assets, portfolio.currency);

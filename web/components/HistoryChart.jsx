@@ -5,11 +5,11 @@ export default function HistoryChart({ history, currency }) {
   if (history.length < 2) {
     return (
       <div className="sec">
-        <h2>Evolução do valor total</h2>
+        <h2>Total value over time</h2>
         <p className="hint">
           {history.length === 0
-            ? 'Nenhum registro ainda. Atualize os preços para começar a acompanhar.'
-            : 'Um registro guardado. O gráfico aparece a partir do segundo.'}
+            ? 'No records yet. Refresh prices to start tracking.'
+            : 'One record stored. The chart appears from the second one on.'}
         </p>
       </div>
     );
@@ -31,15 +31,15 @@ export default function HistoryChart({ history, currency }) {
 
   return (
     <div className="sec">
-      <h2>Evolução do valor total</h2>
-      <p className="hint">Um registro a cada vez que você atualiza os preços.</p>
+      <h2>Total value over time</h2>
+      <p className="hint">One record every time you refresh prices.</p>
 
       <svg
         className="spark"
         viewBox="0 0 100 40"
         preserveAspectRatio="none"
         role="img"
-        aria-label={`Valor total ao longo de ${history.length} registros, de ${money(first.total)} a ${money(last.total)} dólares`}
+        aria-label={`Total value across ${history.length} records, from ${money(first.total)} to ${money(last.total)}`}
       >
         <polygon fill="var(--ok)" opacity="0.13" points={`${points.join(' ')} 100,40 0,40`} />
         <polyline
@@ -55,9 +55,9 @@ export default function HistoryChart({ history, currency }) {
 
       <div className="sparkfoot">
         <span>
-          {history.length} registros · desde {dateOnly(first.at)}
+          {history.length} records · since {dateOnly(first.at)}
         </span>
-        <span className="num">{cash(last.total, currency)} hoje</span>
+        <span className="num">{cash(last.total, currency)} today</span>
       </div>
     </div>
   );

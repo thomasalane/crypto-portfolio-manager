@@ -56,7 +56,7 @@ export default function AssetEditor({
     try {
       const { results: found } = await searchAssets(query);
       setResults(found);
-      if (found.length === 0) setSearchError('Nada encontrado na CoinGecko com esse nome.');
+      if (found.length === 0) setSearchError('CoinGecko has nothing under that name.');
     } catch (err) {
       setSearchError(err.message);
     } finally {
@@ -75,19 +75,19 @@ export default function AssetEditor({
     <div className="sec">
       <div className="sec-head">
         <div className="grow">
-          <h2>Seus ativos e suas metas</h2>
+          <h2>Your assets and targets</h2>
           <p className="hint">
-            As metas precisam somar 100%. Ativos manuais são para o que não existe na CoinGecko —
-            você informa o preço em {symbolFor(currency)}.
+            Targets must add up to 100%. Manual assets are for anything CoinGecko does not
+            list — you supply the price in {symbolFor(currency)}.
           </p>
         </div>
         {backupAvailable && (
-          <button className="btn quiet" onClick={onRestore} disabled={restoring} title="Volta para a versão substituída pelo último salvamento">
-            {restoring ? 'Voltando…' : 'Desfazer último salvamento'}
+          <button className="btn quiet" onClick={onRestore} disabled={restoring} title="Goes back to the version the last save replaced">
+            {restoring ? 'Undoing…' : 'Undo last save'}
           </button>
         )}
         <button className="btn" onClick={onSave} disabled={!dirty || saving}>
-          {saving ? 'Salvando…' : 'Salvar'}
+          {saving ? 'Saving…' : 'Save'}
         </button>
       </div>
 
@@ -95,10 +95,10 @@ export default function AssetEditor({
         <table className="assets">
           <thead>
             <tr>
-              <th>Ativo</th>
-              <th>Meta (%)</th>
-              <th>Quantidade</th>
-              <th>Preço</th>
+              <th>Asset</th>
+              <th>Target (%)</th>
+              <th>Quantity</th>
+              <th>Price</th>
               <th />
             </tr>
           </thead>
@@ -120,14 +120,14 @@ export default function AssetEditor({
                     className="narrow"
                     value={Number((a.target * 100).toFixed(4))}
                     onChange={(next) => patch(a.id, { target: next / 100 })}
-                    aria-label={`Meta de ${a.symbol} em porcentagem`}
+                    aria-label={`Target for ${a.symbol} in percent`}
                   />
                 </td>
                 <td>
                   <NumberField
                     value={a.quantity}
                     onChange={(next) => patch(a.id, { quantity: next })}
-                    aria-label={`Quantidade de ${a.symbol}`}
+                    aria-label={`Quantity of ${a.symbol}`}
                   />
                 </td>
                 <td>
@@ -138,7 +138,7 @@ export default function AssetEditor({
                       onChange={(next) =>
                         patch(a.id, { prices: { ...a.prices, [currency]: next } })
                       }
-                      aria-label={`Preço de ${a.symbol} em ${currency.toUpperCase()}`}
+                      aria-label={`Price of ${a.symbol} in ${currency.toUpperCase()}`}
                     />
                   ) : (
                     <span className="num" style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
@@ -147,8 +147,8 @@ export default function AssetEditor({
                   )}
                 </td>
                 <td style={{ textAlign: 'right' }}>
-                  <button className="btn quiet" onClick={() => remove(a.id)} aria-label={`Remover ${a.symbol}`}>
-                    Remover
+                  <button className="btn quiet" onClick={() => remove(a.id)} aria-label={`Remove ${a.symbol}`}>
+                    Remove
                   </button>
                 </td>
               </tr>
@@ -159,13 +159,13 @@ export default function AssetEditor({
 
       {assets.length > 0 && (
         <div className="sum-line">
-          <span className="cap">Soma das metas</span>
+          <span className="cap">Targets add up to</span>
           <span className={`num ${closed ? 'good' : 'bad'}`}>{pct(targetSum)}%</span>
           {!closed && (
             <span className="bad">
               {targetSum < 1
-                ? `falta ${pct(1 - targetSum)}%`
-                : `sobra ${pct(targetSum - 1)}%`}
+                ? `${pct(1 - targetSum)}% short`
+                : `${pct(targetSum - 1)}% over`}
             </span>
           )}
         </div>
@@ -182,17 +182,17 @@ export default function AssetEditor({
       <form className="search-wrap" onSubmit={runSearch}>
         <input
           type="search"
-          placeholder="Buscar um ativo para adicionar…"
+          placeholder="Search for an asset to add…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          aria-label="Buscar ativo"
+          aria-label="Search assets"
         />
         <div className="sum-line" style={{ marginTop: 10 }}>
           <button className="btn" type="submit" disabled={searching || !query.trim()}>
-            {searching ? 'Buscando…' : 'Buscar'}
+            {searching ? 'Searching…' : 'Search'}
           </button>
           <button className="btn quiet" type="button" onClick={addManual} disabled={!query.trim()}>
-            Adicionar como manual
+            Add as manual
           </button>
         </div>
 
@@ -207,7 +207,7 @@ export default function AssetEditor({
                 <span className="rp num">
                   {typeof r.prices?.[currency] === 'number'
                     ? cashPrice(r.prices[currency], currency)
-                    : 'sem cotação'}
+                    : 'no quote'}
                 </span>
               </button>
             ))}

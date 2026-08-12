@@ -85,7 +85,7 @@ export default function App() {
       setPortfolio(next);
       setDraft(next.assets);
       setBackupAvailable(true);
-      setNotice('Ativos salvos.');
+      setNotice('Assets saved.');
     } catch (err) {
       setErrors(err.message.split(/(?<=\.)\s+/).filter(Boolean));
     } finally {
@@ -100,7 +100,7 @@ export default function App() {
       const { portfolio: next } = await api.restorePrevious();
       setPortfolio(next);
       setDraft(next.assets);
-      setNotice('Versão anterior restaurada. Clique de novo para desfazer.');
+      setNotice('Earlier version restored. Click again to undo.');
     } catch (err) {
       setNotice(err.message);
     } finally {
@@ -133,8 +133,8 @@ export default function App() {
       setStaleSymbols(missing);
       setNotice(
         missing.length > 0
-          ? `Preços atualizados. Sem preço para: ${missing.join(', ')}.`
-          : 'Preços atualizados.'
+          ? `Prices refreshed. No quote for: ${missing.join(', ')}.`
+          : 'Prices refreshed.'
       );
     } catch (err) {
       setNotice(err.message);
@@ -146,7 +146,7 @@ export default function App() {
   if (loading) {
     return (
       <div className="app">
-        <div className="banner">Carregando…</div>
+        <div className="banner">Loading…</div>
       </div>
     );
   }
@@ -158,7 +158,7 @@ export default function App() {
       <div className="app">
         <div className="top">
           <span className="brand">Portfolio</span>
-          <div className="switch" role="group" aria-label="Moeda de exibição">
+          <div className="switch" role="group" aria-label="Display currency">
             {CURRENCIES.map((c) => (
               <button
                 key={c}
@@ -172,11 +172,11 @@ export default function App() {
             ))}
           </div>
           <span className="grow" />
-          <button className="btn icon" onClick={toggleTheme} aria-label="Alternar modo claro e escuro">
+          <button className="btn icon" onClick={toggleTheme} aria-label="Toggle light and dark mode">
             {theme === 'dark' ? '☀' : '☾'}
           </button>
           <button className="btn" onClick={refresh} disabled={refreshing || !hasAssets}>
-            {refreshing ? 'Atualizando…' : 'Atualizar preços'}
+            {refreshing ? 'Refreshing…' : 'Refresh prices'}
           </button>
         </div>
 
@@ -206,10 +206,10 @@ export default function App() {
           </>
         ) : (
           <div className="empty">
-            <h2>Nenhum ativo ainda</h2>
+            <h2>No assets yet</h2>
             <p>
-              Comece adicionando um ativo e definindo a meta dele. Você decide quais ativos
-              acompanhar e qual porcentagem cada um deve ocupar — nada vem pronto.
+              Start by adding an asset and setting its target. You decide which assets to
+              track and what share each one should hold — nothing comes pre-configured.
             </p>
           </div>
         )}

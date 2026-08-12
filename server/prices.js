@@ -1,13 +1,14 @@
 import { CURRENCIES } from '../core/currency.js';
+
 const BASE = 'https://api.coingecko.com/api/v3';
 const MAX_RESULTS = 15;
 
 /** Turn a non-ok response into a message the interface can show as-is. */
 function describeFailure(status) {
   if (status === 429) {
-    return new Error('A CoinGecko recusou por limite de requisições. Espere um minuto e tente de novo.');
+    return new Error('CoinGecko refused the request: rate limit reached. Wait a minute and try again.');
   }
-  return new Error(`A CoinGecko não respondeu (erro ${status}). Os preços anteriores foram mantidos.`);
+  return new Error(`CoinGecko did not respond (error ${status}). The previous prices were kept.`);
 }
 
 /**

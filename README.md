@@ -16,5 +16,3 @@ Every asset and every target is added by the user — nothing comes pre-configur
 - Contribution planner — enter an amount and see what to buy
 - Full rebalance — the sells that fund the buys to bring every asset back to target
 - USD and BRL
-
-> **Note:** the app interface is in Portuguese.

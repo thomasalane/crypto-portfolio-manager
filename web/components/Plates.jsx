@@ -9,31 +9,31 @@ export default function Plates({ rows, total, currency }) {
   return (
     <div className="plates">
       <div className="plate">
-        <div className="cap">Valor total</div>
+        <div className="cap">Total value</div>
         <div className="v num">{cash(total, currency)}</div>
-        <div className="sub">{rows.length} {rows.length === 1 ? 'ativo' : 'ativos'}</div>
+        <div className="sub">{rows.length} {rows.length === 1 ? 'asset' : 'assets'}</div>
       </div>
 
       <div className="plate">
-        <div className="cap">Fora da meta</div>
+        <div className="cap">Off target</div>
         <div className={`v num ${allOnTarget ? 'good' : 'bad'}`}>
           {off.length}
-          <small> de {rows.length}</small>
+          <small> of {rows.length}</small>
         </div>
         <div className="sub">
           {allOnTarget
-            ? 'tudo dentro da meta'
-            : `maior desvio: ${worst.symbol}, ${points(worst.deviation)} pontos`}
+            ? 'everything within target'
+            : `widest gap: ${worst.symbol}, ${points(worst.deviation)} points`}
         </div>
       </div>
 
       <div className="plate">
-        <div className="cap">Comprar primeiro</div>
+        <div className="cap">Buy first</div>
         <div className="v word">{allOnTarget || behind.deviation >= 0 ? '—' : behind.symbol}</div>
         <div className="sub">
           {allOnTarget || behind.deviation >= 0
-            ? 'nenhuma compra necessária'
-            : `é o mais atrasado — falta ${points(behind.deviation).replace('−', '')} pontos`}
+            ? 'nothing to buy'
+            : `furthest behind — ${points(behind.deviation).replace('−', '')} points short`}
         </div>
       </div>
     </div>

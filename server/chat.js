@@ -4,10 +4,10 @@ const BASE = 'https://generativelanguage.googleapis.com/v1beta';
 export const MODEL = 'gemini-2.5-flash';
 
 const pct = (fraction) =>
-  (fraction * 100).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  (fraction * 100).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 const money = (value) =>
-  value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /**
  * Assemble everything the assistant is allowed to know. Every figure here is
@@ -25,41 +25,41 @@ export function buildPrompt(state, question) {
         .map((r) =>
           [
             `- ${r.symbol} (${r.name})`,
-            `quantidade ${r.quantity}`,
-            `preço ${money(r.price)}`,
-            `valor ${money(r.value)}`,
-            `hoje ${pct(r.actual)}%`,
-            `meta ${pct(r.target)}%`,
-            `desvio ${r.deviation >= 0 ? '+' : '−'}${pct(Math.abs(r.deviation))} pontos`,
-            r.onTarget ? 'na meta' : 'fora da meta',
+            `quantity ${r.quantity}`,
+            `price ${money(r.price)}`,
+            `value ${money(r.value)}`,
+            `today ${pct(r.actual)}%`,
+            `target ${pct(r.target)}%`,
+            `deviation ${r.deviation >= 0 ? '+' : '−'}${pct(Math.abs(r.deviation))} points`,
+            r.onTarget ? 'on target' : 'off target',
           ].join(' · ')
         )
         .join('\n')
-    : 'Nenhum ativo cadastrado ainda.';
+    : 'No assets have been added yet.';
 
   const orders = rebalanceOrders.length
     ? rebalanceOrders
-        .map((o) => `- ${o.side === 'sell' ? 'Vender' : 'Comprar'} ${o.symbol}: ${money(o.amount)}`)
+        .map((o) => `- ${o.side === 'sell' ? 'Sell' : 'Buy'} ${o.symbol}: ${money(o.amount)}`)
         .join('\n')
-    : 'Nenhuma ordem necessária.';
+    : 'No orders needed.';
 
-  return `Você é o assistente de um gerenciador de portfolio de criptomoedas. Responda em português do Brasil, de forma direta e curta.
+  return `You are the assistant of a crypto portfolio manager. Answer in English, briefly and directly.
 
-Regras:
-- Responda apenas sobre o portfolio abaixo. Se perguntarem outra coisa, diga que você só trata deste portfolio.
-- Não calcule nem invente números. Todos os valores já vêm calculados abaixo; use exatamente esses.
-- Não dê conselho de investimento nem opinião sobre o que vai subir ou cair. Descreva a situação e o que o rebalanceamento faria.
+Rules:
+- Only answer about the portfolio below. If asked anything else, say you only handle this portfolio.
+- Do not calculate or invent figures. Every value is already computed below; use exactly those.
+- Do not give investment advice or opinions on what will rise or fall. Describe the situation and what rebalancing would do.
 
-Estado do portfolio (valores em ${String(state.currency ?? 'usd').toUpperCase()}):
-Valor total: ${money(total)}
+Portfolio state (values in ${String(state.currency ?? 'usd').toUpperCase()}):
+Total value: ${money(total)}
 
-Ativos:
+Assets:
 ${table}
 
-Rebalanceamento calculado:
+Calculated rebalance:
 ${orders}
 
-Pergunta do usuário: ${question}`;
+User question: ${question}`;
 }
 
 /**
@@ -70,7 +70,7 @@ Pergunta do usuário: ${question}`;
  */
 export async function askModel(prompt, apiKey, fetchImpl = fetch) {
   if (!apiKey) {
-    throw new Error('A chave da API não está configurada. Coloque GEMINI_API_KEY no arquivo .env.');
+    throw new Error('The API key is not configured. Add GEMINI_API_KEY to the .env file.');
   }
 
   const res = await fetchImpl(`${BASE}/models/${MODEL}:generateContent`, {
@@ -94,20 +94,20 @@ export async function askModel(prompt, apiKey, fetchImpl = fetch) {
 
   if (!res.ok) {
     if (res.status === 429) {
-      throw new Error('Você atingiu o limite gratuito do modelo por enquanto. Tente de novo mais tarde.');
+      throw new Error('You have hit the model free-tier limit for now. Try again later.');
     }
     const body = await res.json().catch(() => ({}));
     const detail = body?.error?.message ?? '';
     if (res.status === 400 && /api key/i.test(detail)) {
-      throw new Error('A chave da API foi recusada. Confira o valor de GEMINI_API_KEY no arquivo .env.');
+      throw new Error('The API key was rejected. Check the GEMINI_API_KEY value in the .env file.');
     }
-    throw new Error(`O modelo não respondeu (erro ${res.status}).`);
+    throw new Error(`The model did not respond (error ${res.status}).`);
   }
 
   const body = await res.json();
   const text = body?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) {
-    throw new Error('O modelo devolveu uma resposta vazia. Tente reformular a pergunta.');
+    throw new Error('The model returned an empty answer. Try rewording the question.');
   }
   return text;
 }

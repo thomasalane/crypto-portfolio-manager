@@ -2,33 +2,33 @@
 setlocal
 cd /d "%~dp0."
 
-rem Copiar este arquivo para outra pasta faz o npm subir a arvore de diretorios
-rem e instalar as dependencias de outro projeto. Melhor parar aqui.
+rem Copying this file elsewhere makes npm walk up the directory tree and
+rem install another project's dependencies. Better to stop here.
 if not exist "package.json" goto :wrongfolder
 findstr /c:"crypto-portfolio-manager" package.json >nul || goto :wrongfolder
 
 where node >nul 2>nul
 if errorlevel 1 (
-  echo Node.js nao encontrado. Instale a versao 22 ou mais nova em https://nodejs.org
+  echo Node.js not found. Install version 22 or newer from https://nodejs.org
   pause
   exit /b 1
 )
 
 if not exist "node_modules" (
-  echo Instalando dependencias pela primeira vez...
+  echo Installing dependencies for the first time...
   call npm install || goto :failed
 )
 
 if not exist "dist" (
-  echo Construindo a interface...
+  echo Building the interface...
   call npm run build || goto :failed
 )
 
 if not exist ".env" (
   echo.
-  echo Aviso: .env nao encontrado. O painel funciona normalmente,
-  echo mas o assistente ficara indisponivel. Copie .env.example para .env
-  echo e coloque sua chave da API.
+  echo Note: no .env found. The dashboard works normally, but the
+  echo assistant will be unavailable. Copy .env.example to .env and
+  echo add your API key.
   echo.
 )
 
@@ -38,20 +38,20 @@ goto :eof
 
 :wrongfolder
 echo.
-echo Este arquivo precisa ficar dentro da pasta do projeto, ao lado do
-echo package.json. Rodar uma copia solta em outra pasta faz o npm instalar
-echo as dependencias erradas.
+echo This file has to stay inside the project folder, next to package.json.
+echo Running a stray copy from somewhere else makes npm install the wrong
+echo dependencies.
 echo.
-echo Pasta atual: %CD%
+echo Current folder: %CD%
 echo.
-echo Para ter um atalho na area de trabalho, crie um atalho apontando para
-echo o portfolio.bat original em vez de copiar o arquivo.
+echo For a desktop shortcut, create a shortcut pointing at the original
+echo portfolio.bat instead of copying the file.
 echo.
 pause
 exit /b 1
 
 :failed
 echo.
-echo Falhou. Veja a mensagem acima.
+echo Failed. See the message above.
 pause
 exit /b 1

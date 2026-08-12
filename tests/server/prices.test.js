@@ -42,7 +42,7 @@ describe('searchAssets', () => {
   });
 
   it('reports the rate limit distinctly', async () => {
-    await expect(searchAssets('btc', failing(429))).rejects.toThrow(/limite/i);
+    await expect(searchAssets('btc', failing(429))).rejects.toThrow(/rate limit/i);
   });
 
   it('sends the query to the search endpoint', async () => {
@@ -100,6 +100,6 @@ describe('fetchPrices', () => {
   });
 
   it('reports the rate limit distinctly', async () => {
-    await expect(fetchPrices(['bitcoin'], ['usd'], failing(429))).rejects.toThrow(/limite/i);
+    await expect(fetchPrices(['bitcoin'], ['usd'], failing(429))).rejects.toThrow(/rate limit/i);
   });
 });

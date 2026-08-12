@@ -36,7 +36,7 @@ export function loadPortfolio(filePath) {
     const moved = quarantine(filePath);
     return {
       portfolio: fresh(),
-      warning: `O arquivo do portfolio não pôde ser lido e foi guardado como ${moved}. Começando vazio.`,
+      warning: `The portfolio file could not be read and was set aside as ${moved}. Starting empty.`,
     };
   }
 
@@ -44,7 +44,7 @@ export function loadPortfolio(filePath) {
     const moved = quarantine(filePath);
     return {
       portfolio: fresh(),
-      warning: `O arquivo do portfolio não pôde ser lido e foi guardado como ${moved}. Começando vazio.`,
+      warning: `The portfolio file could not be read and was set aside as ${moved}. Starting empty.`,
     };
   }
 

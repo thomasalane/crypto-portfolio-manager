@@ -6,7 +6,7 @@ function OrderList({ orders, emptyText, currency }) {
     <div className="orders">
       {orders.map((o) => (
         <div className="ord" key={`${o.side}-${o.id}`}>
-          <span className={`tag ${o.side}`}>{o.side === 'sell' ? 'Vender' : 'Comprar'}</span>
+          <span className={`tag ${o.side}`}>{o.side === 'sell' ? 'Sell' : 'Buy'}</span>
           <span className="s">{o.symbol}</span>
           <span className="a">{cash(o.amount, currency)}</span>
         </div>
@@ -23,8 +23,8 @@ export default function ActionDeck({ amount, onAmountChange, contribution, rebal
   return (
     <div className="deck">
       <div className="cell">
-        <h3>Aportar dinheiro novo</h3>
-        <p className="hint">Só compra. Não mexe no que você já tem.</p>
+        <h3>Add new money</h3>
+        <p className="hint">Buys only. Never touches what you already hold.</p>
 
         <div className="feed">
           <span className="cur">{symbolFor(currency)}</span>
@@ -33,33 +33,33 @@ export default function ActionDeck({ amount, onAmountChange, contribution, rebal
             inputMode="decimal"
             value={amount}
             onChange={(e) => onAmountChange(e.target.value)}
-            aria-label="Valor do aporte"
+            aria-label="Contribution amount"
           />
         </div>
 
         <OrderList
           orders={contribution}
-          emptyText="Informe um valor para ver o que comprar."
+          emptyText="Enter an amount to see what to buy."
           currency={currency}
         />
 
         {contribution.length > 0 && (
           <p className="hint" style={{ margin: '12px 0 0' }}>
-            O tracejado verde nas barras mostra onde você fica depois desse aporte.
+            The green dashes on the bars show where you land after this contribution.
           </p>
         )}
       </div>
 
       <div className="cell">
-        <h3>Rebalancear tudo</h3>
-        <p className="hint">Vende o que passou da meta para comprar o que falta.</p>
+        <h3>Rebalance everything</h3>
+        <p className="hint">Sells what overshot the target to buy what is missing.</p>
 
-        <OrderList orders={rebalance.orders} emptyText="Tudo já está na meta. Nada a fazer." currency={currency} />
+        <OrderList orders={rebalance.orders} emptyText="Everything is already on target. Nothing to do." currency={currency} />
 
         {Math.abs(rebalance.residual) >= 0.01 && (
           <p className="hint" style={{ margin: '12px 0 0' }}>
-            Sobra {cash(Math.abs(rebalance.residual), currency)} sem destino: as ordens menores
-            que {cash(1, currency)} foram descartadas para não gerar operação de centavos.
+            {cash(Math.abs(rebalance.residual), currency)} is left unassigned: orders below{' '}
+            {cash(1, currency)} were dropped so you are not left trading small change.
           </p>
         )}
       </div>
