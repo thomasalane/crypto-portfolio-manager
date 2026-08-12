@@ -1,5 +1,5 @@
 import { colorForSlot } from '../lib/colors.js';
-import { money, pct, quantity, dateTime } from '../lib/format.js';
+import { cash, pct, quantity, dateTime } from '../lib/format.js';
 
 /**
  * One row per asset on a shared 0–100% ruler. The solid bar is what you hold,
@@ -7,7 +7,7 @@ import { money, pct, quantity, dateTime } from '../lib/format.js';
  * target itself. Colour is decorative here — every row carries its own label —
  * so there is no cap on how many assets this list shows.
  */
-export default function DeviationBars({ rows, total, theme, projection, staleSymbols }) {
+export default function DeviationBars({ rows, total, theme, projection, staleSymbols, currency }) {
   return (
     <div className="sec">
       <h2>Distância até a meta</h2>
@@ -73,9 +73,9 @@ export default function DeviationBars({ rows, total, theme, projection, staleSym
               {row.onTarget ? (
                 <span className="amt on">na meta</span>
               ) : shortfall > 0 ? (
-                <span className="amt">falta ${money(shortfall, 0)}</span>
+                <span className="amt">falta {cash(shortfall, currency, 0)}</span>
               ) : (
-                <span className="amt over">sobra ${money(-shortfall, 0)}</span>
+                <span className="amt over">sobra {cash(-shortfall, currency, 0)}</span>
               )}
             </div>
           </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { colorForSlot } from '../lib/colors.js';
 import { searchAssets } from '../lib/api.js';
-import { pct, price } from '../lib/format.js';
+import { pct, cashPrice, symbolFor } from '../lib/format.js';
 
 /**
  * Everything about which assets exist and what they are aiming at. Nothing is
@@ -9,7 +9,7 @@ import { pct, price } from '../lib/format.js';
  */
 export default function AssetEditor({
   assets, onChange, onSave, onRestore, errors, saving, dirty, theme,
-  backupAvailable, restoring,
+  backupAvailable, restoring, currency,
 }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -26,7 +26,7 @@ export default function AssetEditor({
 
   const add = (found) => {
     if (assets.some((a) => a.id === found.id)) return;
-    const priced = typeof found.price === 'number';
+    const quoted = found.prices ?? null;
     onChange([
       ...assets,
       {
@@ -37,9 +37,10 @@ export default function AssetEditor({
         target: 0,
         quantity: 0,
         colorSlot: undefined,
-        // The search already quoted it, so the asset arrives priced.
-        lastPrice: priced ? found.price : found.source === 'manual' ? 0 : null,
-        lastPriceAt: priced ? new Date().toISOString() : null,
+        // The search already quoted it in every currency, so the asset
+        // arrives priced and stays priced after a currency switch.
+        prices: quoted ?? {},
+        lastPriceAt: quoted ? new Date().toISOString() : null,
       },
     ]);
     setQuery('');
@@ -76,7 +77,7 @@ export default function AssetEditor({
           <h2>Seus ativos e suas metas</h2>
           <p className="hint">
             As metas precisam somar 100%. Ativos manuais são para o que não existe na CoinGecko —
-            você informa o preço.
+            você informa o preço em {symbolFor(currency)}.
           </p>
         </div>
         {backupAvailable && (
@@ -142,13 +143,17 @@ export default function AssetEditor({
                       type="number"
                       min="0"
                       step="any"
-                      value={a.lastPrice ?? 0}
-                      onChange={(e) => patch(a.id, { lastPrice: Number(e.target.value) || 0 })}
-                      aria-label={`Preço de ${a.symbol}`}
+                      value={a.prices?.[currency] ?? 0}
+                      onChange={(e) =>
+                        patch(a.id, {
+                          prices: { ...a.prices, [currency]: Number(e.target.value) || 0 },
+                        })
+                      }
+                      aria-label={`Preço de ${a.symbol} em ${currency.toUpperCase()}`}
                     />
                   ) : (
                     <span className="num" style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
-                      {a.lastPrice ? `$${price(a.lastPrice)}` : '—'}
+                      {a.prices?.[currency] ? cashPrice(a.prices[currency], currency) : '—'}
                     </span>
                   )}
                 </td>
@@ -211,8 +216,8 @@ export default function AssetEditor({
                 <span className="rs">{r.symbol}</span>
                 <span className="rn">{r.name}</span>
                 <span className="rp num">
-                  {typeof r.price === 'number'
-                    ? `$${price(r.price)}`
+                  {typeof r.prices?.[currency] === 'number'
+                    ? cashPrice(r.prices[currency], currency)
                     : 'sem cotação'}
                 </span>
               </button>

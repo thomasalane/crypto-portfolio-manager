@@ -6,6 +6,7 @@ import { buildPrompt, askModel } from './chat.js';
 import { validateAssets } from '../core/validation.js';
 import { computeState } from '../core/allocation.js';
 import { planRebalance } from '../core/rebalance.js';
+import { CURRENCIES, isSupported, withPricesIn } from '../core/currency.js';
 
 /** The donut carries four hues; anything past that shares the neutral slice. */
 const MAX_COLOR_SLOTS = 4;
@@ -41,6 +42,7 @@ export function createApp({ dataFile, apiKey, fetchImpl = fetch }) {
       warning,
       assistantReady: Boolean(apiKey),
       backupAvailable: existsSync(backupPathFor(dataFile)),
+      currencies: CURRENCIES,
     });
   });
 
@@ -55,6 +57,20 @@ export function createApp({ dataFile, apiKey, fetchImpl = fetch }) {
     const { portfolio } = loadPortfolio(backup);
     savePortfolio(dataFile, portfolio);
     res.json({ portfolio });
+  });
+
+  app.put('/api/currency', (req, res) => {
+    const currency = req.body?.currency;
+    if (!isSupported(currency)) {
+      return res.status(400).json({ error: 'Moeda não suportada.' });
+    }
+
+    // Every asset already carries a price in both currencies, so switching is
+    // a display change — no refetch, no conversion, no exchange-rate guessing.
+    const { portfolio } = loadPortfolio(dataFile);
+    const updated = { ...portfolio, currency };
+    savePortfolio(dataFile, updated);
+    res.json({ portfolio: updated });
   });
 
   app.put('/api/assets', (req, res) => {
@@ -78,7 +94,7 @@ export function createApp({ dataFile, apiKey, fetchImpl = fetch }) {
 
     let prices;
     try {
-      prices = await fetchPrices(tracked.map((a) => a.id), portfolio.currency, fetchImpl);
+      prices = await fetchPrices(tracked.map((a) => a.id), CURRENCIES, fetchImpl);
     } catch (err) {
       // Prices on disk stay as they were — a dead API must not erase them.
       return res.status(502).json({ error: err.message });
@@ -88,16 +104,20 @@ export function createApp({ dataFile, apiKey, fetchImpl = fetch }) {
     const missing = [];
     const assets = portfolio.assets.map((a) => {
       if (a.source === 'manual') return a;
-      const price = prices[a.id];
-      if (typeof price !== 'number') {
+      const quoted = prices[a.id];
+      if (!quoted) {
         missing.push(a.symbol);
         return a;
       }
-      return { ...a, lastPrice: price, lastPriceAt: at };
+      return { ...a, prices: { ...a.prices, ...quoted }, lastPriceAt: at };
     });
 
-    const { total } = computeState(assets);
-    const history = [...portfolio.history, { at, total }];
+    // Record the total in every currency so the history stays readable after a
+    // switch, instead of needing historical exchange rates to fill the gap.
+    const totals = Object.fromEntries(
+      CURRENCIES.map((c) => [c, computeState(withPricesIn(assets, c)).total])
+    );
+    const history = [...portfolio.history, { at, totals }];
     const updated = { ...portfolio, assets, history };
     savePortfolio(dataFile, updated);
 
@@ -117,16 +137,15 @@ export function createApp({ dataFile, apiKey, fetchImpl = fetch }) {
     // not worth losing the search over — the results still go out, unpriced.
     let prices = {};
     if (found.length > 0) {
-      const { portfolio } = loadPortfolio(dataFile);
       try {
-        prices = await fetchPrices(found.map((f) => f.id), portfolio.currency, fetchImpl);
+        prices = await fetchPrices(found.map((f) => f.id), CURRENCIES, fetchImpl);
       } catch {
         prices = {};
       }
     }
 
     res.json({
-      results: found.map((f) => ({ ...f, price: prices[f.id] ?? null })),
+      results: found.map((f) => ({ ...f, prices: prices[f.id] ?? null })),
     });
   });
 
@@ -135,8 +154,9 @@ export function createApp({ dataFile, apiKey, fetchImpl = fetch }) {
     if (!question) return res.status(400).json({ error: 'Escreva uma pergunta.' });
 
     const { portfolio } = loadPortfolio(dataFile);
-    const { total, rows } = computeState(portfolio.assets);
-    const { orders } = planRebalance(portfolio.assets);
+    const priced = withPricesIn(portfolio.assets, portfolio.currency);
+    const { total, rows } = computeState(priced);
+    const { orders } = planRebalance(priced);
 
     const prompt = buildPrompt(
       { currency: portfolio.currency, total, rows, rebalanceOrders: orders },

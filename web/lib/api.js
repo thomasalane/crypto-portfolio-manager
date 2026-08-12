@@ -28,6 +28,13 @@ export const refreshPrices = () => call('/api/refresh', { method: 'POST' });
 
 export const restorePrevious = () => call('/api/restore', { method: 'POST' });
 
+export const setCurrency = (currency) =>
+  call('/api/currency', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ currency }),
+  });
+
 export const searchAssets = (q) => call(`/api/search?q=${encodeURIComponent(q)}`);
 
 export const ask = (question) =>

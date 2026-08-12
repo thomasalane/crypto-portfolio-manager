@@ -30,10 +30,10 @@ describe('loadPortfolio', () => {
 
   it('reads back what was saved', () => {
     const portfolio = {
-      version: 1,
+      version: 2,
       currency: 'usd',
-      assets: [{ id: 'a', symbol: 'A', name: 'A', source: 'coingecko', target: 1, quantity: 2, colorSlot: 1, lastPrice: 3, lastPriceAt: null }],
-      history: [{ at: '2026-01-01T00:00:00.000Z', total: 6 }],
+      assets: [{ id: 'a', symbol: 'A', name: 'A', source: 'coingecko', target: 1, quantity: 2, colorSlot: 1, prices: { usd: 3, brl: 16 }, lastPriceAt: null }],
+      history: [{ at: '2026-01-01T00:00:00.000Z', totals: { usd: 6, brl: 32 } }],
     };
     savePortfolio(file, portfolio);
     expect(loadPortfolio(file).portfolio).toEqual(portfolio);
@@ -60,6 +60,47 @@ describe('loadPortfolio', () => {
     const { portfolio, warning } = loadPortfolio(file);
     expect(portfolio).toEqual(EMPTY_PORTFOLIO);
     expect(warning).not.toBeNull();
+  });
+
+  it('migrates a single lastPrice to per-currency prices, assuming USD', () => {
+    writeFileSync(file, JSON.stringify({
+      version: 1, currency: 'usd',
+      assets: [{ id: 'a', symbol: 'A', name: 'A', source: 'coingecko', target: 1, quantity: 2, colorSlot: 1, lastPrice: 63940, lastPriceAt: '2026-08-12T13:14:33.480Z' }],
+      history: [{ at: '2026-08-12T13:14:33.480Z', total: 5056.42 }],
+    }));
+
+    const { portfolio, warning } = loadPortfolio(file);
+    expect(warning).toBeNull();
+    expect(portfolio.assets[0].prices).toEqual({ usd: 63940 });
+    expect(portfolio.assets[0].lastPrice).toBeUndefined();
+    expect(portfolio.history[0].totals).toEqual({ usd: 5056.42 });
+  });
+
+  it('leaves an already-migrated file alone', () => {
+    writeFileSync(file, JSON.stringify({
+      version: 2, currency: 'brl',
+      assets: [{ id: 'a', symbol: 'A', name: 'A', source: 'coingecko', target: 1, quantity: 2, colorSlot: 1, prices: { usd: 1, brl: 5 }, lastPriceAt: null }],
+      history: [{ at: 'x', totals: { usd: 2, brl: 10 } }],
+    }));
+
+    const { portfolio } = loadPortfolio(file);
+    expect(portfolio.assets[0].prices).toEqual({ usd: 1, brl: 5 });
+    expect(portfolio.history[0].totals).toEqual({ usd: 2, brl: 10 });
+    expect(portfolio.currency).toBe('brl');
+  });
+
+  it('falls back to usd when the stored currency is not supported', () => {
+    writeFileSync(file, JSON.stringify({ version: 2, currency: 'eur', assets: [], history: [] }));
+    expect(loadPortfolio(file).portfolio.currency).toBe('usd');
+  });
+
+  it('migrates an asset that never had a price', () => {
+    writeFileSync(file, JSON.stringify({
+      version: 1, currency: 'usd',
+      assets: [{ id: 'a', symbol: 'A', name: 'A', source: 'coingecko', target: 1, quantity: 0, colorSlot: 1, lastPrice: null, lastPriceAt: null }],
+      history: [],
+    }));
+    expect(loadPortfolio(file).portfolio.assets[0].prices).toEqual({});
   });
 
   it('fills in a missing history array rather than failing', () => {

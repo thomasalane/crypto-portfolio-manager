@@ -1,3 +1,4 @@
+import { CURRENCIES } from '../core/currency.js';
 const BASE = 'https://api.coingecko.com/api/v3';
 const MAX_RESULTS = 15;
 
@@ -32,26 +33,34 @@ export async function searchAssets(query, fetchImpl = fetch) {
 }
 
 /**
- * One request for every id. Ids absent from the response are left out rather
- * than defaulted, so the caller can mark just those assets as stale.
+ * One request for every id, quoting every currency at once — CoinGecko returns
+ * them all in the same payload, so the display can switch later without another
+ * call. Ids absent from the response are left out rather than defaulted, so the
+ * caller can mark just those assets as stale.
  *
  * @param {string[]} ids
- * @param {string} currency
+ * @param {string[]} currencies
  * @param {typeof fetch} fetchImpl
- * @returns {Promise<Record<string, number>>}
+ * @returns {Promise<Record<string, Record<string, number>>>} id → currency → price
  */
-export async function fetchPrices(ids, currency = 'usd', fetchImpl = fetch) {
+export async function fetchPrices(ids, currencies = CURRENCIES, fetchImpl = fetch) {
   if (!ids || ids.length === 0) return {};
 
-  const url = `${BASE}/simple/price?ids=${encodeURIComponent(ids.join(','))}&vs_currencies=${encodeURIComponent(currency)}`;
+  const url =
+    `${BASE}/simple/price?ids=${encodeURIComponent(ids.join(','))}` +
+    `&vs_currencies=${encodeURIComponent(currencies.join(','))}`;
   const res = await fetchImpl(url);
   if (!res.ok) throw describeFailure(res.status);
 
   const body = await res.json();
   const prices = {};
   for (const id of ids) {
-    const value = body?.[id]?.[currency];
-    if (typeof value === 'number') prices[id] = value;
+    const quoted = {};
+    for (const currency of currencies) {
+      const value = body?.[id]?.[currency];
+      if (typeof value === 'number') quoted[currency] = value;
+    }
+    if (Object.keys(quoted).length > 0) prices[id] = quoted;
   }
   return prices;
 }

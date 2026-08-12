@@ -412,3 +412,9 @@ input:focus { outline: 2px solid var(--ok); outline-offset: 1px; }
   .cell + .cell { border-left: 0; border-top: 1px solid var(--line); }
   .sheet { right: 12px; left: 12px; width: auto; }
 }
+
+/* ---------- currency switch ---------- */
+.switch { display: flex; gap: 2px; border: 1px solid var(--line); border-radius: 3px; padding: 2px; }
+.switch .btn { border-color: transparent; padding: 4px 9px; font-size: 10px; }
+.switch .btn.on { background: var(--ink); color: var(--bg); border-color: transparent; }
+.switch .btn.on:hover:not(:disabled) { background: var(--ink); color: var(--bg); }

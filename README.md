@@ -18,6 +18,7 @@ Every asset and every target is added by the user — nothing comes pre-configur
 - Contribution planner — enter an amount and see what to buy, projected onto the bars
 - Full rebalance — the sells that fund the buys to bring every asset back to target
 - Portfolio value history, recorded on each price refresh
+- USD and BRL, switched instantly — every price is stored in both currencies
 - Dark and light themes
 
 > **Note:** the app interface is in Portuguese.

@@ -1,7 +1,7 @@
-import { money, dateOnly } from '../lib/format.js';
+import { cash, money, dateOnly } from '../lib/format.js';
 
 /** Value over time, one point per price refresh. */
-export default function HistoryChart({ history }) {
+export default function HistoryChart({ history, currency }) {
   if (history.length < 2) {
     return (
       <div className="sec">
@@ -57,7 +57,7 @@ export default function HistoryChart({ history }) {
         <span>
           {history.length} registros · desde {dateOnly(first.at)}
         </span>
-        <span className="num">${money(last.total)} hoje</span>
+        <span className="num">{cash(last.total, currency)} hoje</span>
       </div>
     </div>
   );

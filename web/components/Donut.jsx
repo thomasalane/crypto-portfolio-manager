@@ -1,5 +1,5 @@
 import { colorForSlot, hasOwnColor, neutralColor } from '../lib/colors.js';
-import { money, pct, points } from '../lib/format.js';
+import { cash, pct, points } from '../lib/format.js';
 
 const SIZE = 220;
 const CENTER = SIZE / 2;
@@ -63,7 +63,7 @@ function Ring({ segments, field, r, width, opacity }) {
   });
 }
 
-export default function Donut({ rows, total, theme }) {
+export default function Donut({ rows, total, theme, currency }) {
   const segments = toSegments(rows, theme);
 
   return (
@@ -94,7 +94,7 @@ export default function Donut({ rows, total, theme }) {
             </svg>
             <div className="hub">
               <div className="cap">Total</div>
-              <div className="t num">${money(total, 0)}</div>
+              <div className="t num">{cash(total, currency, 0)}</div>
             </div>
           </div>
           <div className="ringkey">

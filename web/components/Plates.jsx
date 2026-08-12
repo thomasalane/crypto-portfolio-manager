@@ -1,6 +1,6 @@
-import { money, points } from '../lib/format.js';
+import { cash, points } from '../lib/format.js';
 
-export default function Plates({ rows, total }) {
+export default function Plates({ rows, total, currency }) {
   const off = rows.filter((r) => !r.onTarget);
   const behind = [...rows].sort((a, b) => a.deviation - b.deviation)[0];
   const worst = [...rows].sort((a, b) => Math.abs(b.deviation) - Math.abs(a.deviation))[0];
@@ -10,10 +10,7 @@ export default function Plates({ rows, total }) {
     <div className="plates">
       <div className="plate">
         <div className="cap">Valor total</div>
-        <div className="v num">
-          {money(total).split(',')[0]}
-          <small>,{money(total).split(',')[1]}</small>
-        </div>
+        <div className="v num">{cash(total, currency)}</div>
         <div className="sub">{rows.length} {rows.length === 1 ? 'ativo' : 'ativos'}</div>
       </div>
 

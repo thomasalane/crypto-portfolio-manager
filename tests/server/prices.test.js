@@ -54,40 +54,52 @@ describe('searchAssets', () => {
 });
 
 describe('fetchPrices', () => {
-  it('returns a map of id to price', async () => {
-    const fetchImpl = ok({ bitcoin: { usd: 95000 }, solana: { usd: 150 } });
-    expect(await fetchPrices(['bitcoin', 'solana'], 'usd', fetchImpl)).toEqual({
-      bitcoin: 95000,
-      solana: 150,
+  it('returns a map of id to per-currency prices', async () => {
+    const fetchImpl = ok({ bitcoin: { usd: 63900, brl: 330969 }, solana: { usd: 76.4, brl: 395.71 } });
+    expect(await fetchPrices(['bitcoin', 'solana'], ['usd', 'brl'], fetchImpl)).toEqual({
+      bitcoin: { usd: 63900, brl: 330969 },
+      solana: { usd: 76.4, brl: 395.71 },
     });
   });
 
+  it('keeps the currencies it did get when one is missing', async () => {
+    const fetchImpl = ok({ bitcoin: { usd: 63900 } });
+    expect(await fetchPrices(['bitcoin'], ['usd', 'brl'], fetchImpl)).toEqual({ bitcoin: { usd: 63900 } });
+  });
+
   it('omits assets missing from the response instead of inventing a price', async () => {
-    const fetchImpl = ok({ bitcoin: { usd: 95000 } });
-    const prices = await fetchPrices(['bitcoin', 'ghost'], 'usd', fetchImpl);
-    expect(prices).toEqual({ bitcoin: 95000 });
+    const fetchImpl = ok({ bitcoin: { usd: 63900, brl: 330969 } });
+    const prices = await fetchPrices(['bitcoin', 'ghost'], ['usd', 'brl'], fetchImpl);
+    expect(prices.ghost).toBeUndefined();
   });
 
   it('returns an empty map for no ids without calling the network', async () => {
     let called = false;
     const fetchImpl = async () => { called = true; return ok({})(); };
-    expect(await fetchPrices([], 'usd', fetchImpl)).toEqual({});
+    expect(await fetchPrices([], ['usd'], fetchImpl)).toEqual({});
     expect(called).toBe(false);
   });
 
-  it('asks for every id in a single request', async () => {
+  it('asks for every id and every currency in a single request', async () => {
     let seen = '';
     const fetchImpl = async (url) => { seen = url; return { ok: true, status: 200, json: async () => ({}) }; };
-    await fetchPrices(['bitcoin', 'solana'], 'usd', fetchImpl);
+    await fetchPrices(['bitcoin', 'solana'], ['usd', 'brl'], fetchImpl);
     expect(seen).toContain('ids=bitcoin%2Csolana');
-    expect(seen).toContain('vs_currencies=usd');
+    expect(seen).toContain('vs_currencies=usd%2Cbrl');
+  });
+
+  it('defaults to quoting every supported currency', async () => {
+    let seen = '';
+    const fetchImpl = async (url) => { seen = url; return { ok: true, status: 200, json: async () => ({}) }; };
+    await fetchPrices(['bitcoin'], undefined, fetchImpl);
+    expect(seen).toContain('vs_currencies=usd%2Cbrl');
   });
 
   it('throws a Portuguese message when the request fails', async () => {
-    await expect(fetchPrices(['bitcoin'], 'usd', failing(503))).rejects.toThrow(/CoinGecko/);
+    await expect(fetchPrices(['bitcoin'], ['usd'], failing(503))).rejects.toThrow(/CoinGecko/);
   });
 
   it('reports the rate limit distinctly', async () => {
-    await expect(fetchPrices(['bitcoin'], 'usd', failing(429))).rejects.toThrow(/limite/i);
+    await expect(fetchPrices(['bitcoin'], ['usd'], failing(429))).rejects.toThrow(/limite/i);
   });
 });

@@ -10,7 +10,7 @@ let dataFile;
 
 const asset = (over) => ({
   id: 'alpha', symbol: 'AAA', name: 'Alpha', source: 'coingecko',
-  target: 1, quantity: 2, colorSlot: 1, lastPrice: 100, lastPriceAt: null,
+  target: 1, quantity: 2, colorSlot: 1, prices: { usd: 100, brl: 520 }, lastPriceAt: null,
   ...over,
 });
 
@@ -120,6 +120,37 @@ describe('PUT /api/assets', () => {
   });
 });
 
+describe('PUT /api/currency', () => {
+  it('switches the display currency', async () => {
+    const res = await request(app()).put('/api/currency').send({ currency: 'brl' });
+    expect(res.status).toBe(200);
+    expect(JSON.parse(readFileSync(dataFile, 'utf8')).currency).toBe('brl');
+  });
+
+  it('rejects an unsupported currency and leaves the setting alone', async () => {
+    seed([asset()]);
+    const res = await request(app()).put('/api/currency').send({ currency: 'eur' });
+    expect(res.status).toBe(400);
+
+    const state = await request(app()).get('/api/state');
+    expect(state.body.portfolio.currency).toBe('usd');
+  });
+
+  it('switches without calling CoinGecko, since both prices are already stored', async () => {
+    seed([asset()]);
+    // fetchImpl throws on any call — a switch that hits the network fails here.
+    const res = await request(app()).put('/api/currency').send({ currency: 'brl' });
+    expect(res.status).toBe(200);
+  });
+
+  it('keeps the assets and their prices intact', async () => {
+    seed([asset()]);
+    await request(app()).put('/api/currency').send({ currency: 'brl' });
+    const saved = JSON.parse(readFileSync(dataFile, 'utf8'));
+    expect(saved.assets[0].prices).toEqual({ usd: 100, brl: 520 });
+  });
+});
+
 describe('POST /api/restore', () => {
   it('brings back the version replaced by the last save', async () => {
     await request(app()).put('/api/assets').send({ assets: [asset({ quantity: 111 })] });
@@ -148,48 +179,48 @@ describe('POST /api/restore', () => {
 });
 
 describe('POST /api/refresh', () => {
-  it('updates prices and records a history snapshot', async () => {
+  it('updates prices and records a history snapshot in every currency', async () => {
     seed([asset({ id: 'alpha', quantity: 2 })]);
-    const fetchImpl = async () => ({ ok: true, status: 200, json: async () => ({ alpha: { usd: 150 } }) });
+    const fetchImpl = async () => ({ ok: true, status: 200, json: async () => ({ alpha: { usd: 150, brl: 780 } }) });
     const res = await request(app({ fetchImpl })).post('/api/refresh');
 
     expect(res.status).toBe(200);
     const saved = JSON.parse(readFileSync(dataFile, 'utf8'));
-    expect(saved.assets[0].lastPrice).toBe(150);
+    expect(saved.assets[0].prices).toEqual({ usd: 150, brl: 780 });
     expect(saved.assets[0].lastPriceAt).toBeTruthy();
     expect(saved.history).toHaveLength(1);
-    expect(saved.history[0].total).toBe(300);
+    expect(saved.history[0].totals).toEqual({ usd: 300, brl: 1560 });
   });
 
   it('leaves manual assets untouched', async () => {
-    seed([asset({ id: 'manual-one', source: 'manual', lastPrice: 42 })]);
+    seed([asset({ id: 'manual-one', source: 'manual', prices: { usd: 42 } })]);
     const fetchImpl = async () => ({ ok: true, status: 200, json: async () => ({}) });
     await request(app({ fetchImpl })).post('/api/refresh');
-    expect(JSON.parse(readFileSync(dataFile, 'utf8')).assets[0].lastPrice).toBe(42);
+    expect(JSON.parse(readFileSync(dataFile, 'utf8')).assets[0].prices).toEqual({ usd: 42 });
   });
 
   it('keeps the previous price and reports the failure when CoinGecko is down', async () => {
-    seed([asset({ lastPrice: 99 })]);
+    seed([asset({ prices: { usd: 99 } })]);
     const fetchImpl = async () => ({ ok: false, status: 503, json: async () => ({}) });
     const res = await request(app({ fetchImpl })).post('/api/refresh');
 
     expect(res.status).toBe(502);
     expect(res.body.error).toMatch(/CoinGecko/);
     const saved = JSON.parse(readFileSync(dataFile, 'utf8'));
-    expect(saved.assets[0].lastPrice).toBe(99);
+    expect(saved.assets[0].prices).toEqual({ usd: 99 });
     expect(saved.history).toHaveLength(0);
   });
 
   it('marks only the assets missing from the response as stale', async () => {
-    seed([asset({ id: 'alpha', target: 0.5, lastPrice: 10 }), asset({ id: 'beta', symbol: 'BBB', target: 0.5, lastPrice: 20 })]);
-    const fetchImpl = async () => ({ ok: true, status: 200, json: async () => ({ alpha: { usd: 11 } }) });
+    seed([asset({ id: 'alpha', target: 0.5, prices: { usd: 10 } }), asset({ id: 'beta', symbol: 'BBB', target: 0.5, prices: { usd: 20 } })]);
+    const fetchImpl = async () => ({ ok: true, status: 200, json: async () => ({ alpha: { usd: 11, brl: 57 } }) });
     const res = await request(app({ fetchImpl })).post('/api/refresh');
 
     expect(res.status).toBe(200);
     expect(res.body.missing).toEqual(['BBB']);
     const saved = JSON.parse(readFileSync(dataFile, 'utf8')).assets;
-    expect(saved.find((a) => a.id === 'alpha').lastPrice).toBe(11);
-    expect(saved.find((a) => a.id === 'beta').lastPrice).toBe(20);
+    expect(saved.find((a) => a.id === 'alpha').prices).toEqual({ usd: 11, brl: 57 });
+    expect(saved.find((a) => a.id === 'beta').prices).toEqual({ usd: 20 });
   });
 
   it('succeeds with no assets without calling the network', async () => {
@@ -210,11 +241,11 @@ describe('GET /api/search', () => {
   it('passes results through with the current price attached', async () => {
     const fetchImpl = searchThenPrice(
       [{ id: 'bitcoin', symbol: 'btc', name: 'Bitcoin' }],
-      { bitcoin: { usd: 63940 } }
+      { bitcoin: { usd: 63940, brl: 332000 } }
     );
     const res = await request(app({ fetchImpl })).get('/api/search?q=bit');
     expect(res.body.results).toEqual([
-      { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', price: 63940 },
+      { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', prices: { usd: 63940, brl: 332000 } },
     ]);
   });
 
@@ -224,7 +255,7 @@ describe('GET /api/search', () => {
       {}
     );
     const res = await request(app({ fetchImpl })).get('/api/search?q=ghost');
-    expect(res.body.results[0].price).toBeNull();
+    expect(res.body.results[0].prices).toBeNull();
   });
 
   it('still returns the results when the price lookup fails', async () => {
@@ -237,7 +268,7 @@ describe('GET /api/search', () => {
     const res = await request(app({ fetchImpl })).get('/api/search?q=bit');
     expect(res.status).toBe(200);
     expect(res.body.results[0].symbol).toBe('BTC');
-    expect(res.body.results[0].price).toBeNull();
+    expect(res.body.results[0].prices).toBeNull();
   });
 
   it('returns an empty list for a missing query', async () => {

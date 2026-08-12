@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { computeState } from '../core/allocation.js';
 import { planContribution } from '../core/contribution.js';
 import { planRebalance } from '../core/rebalance.js';
+import { withPricesIn, historyIn, CURRENCIES, CURRENCY_META } from '../core/currency.js';
 import * as api from './lib/api.js';
 import Plates from './components/Plates.jsx';
 import Donut from './components/Donut.jsx';
@@ -28,6 +29,7 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [backupAvailable, setBackupAvailable] = useState(false);
+  const [switchingCurrency, setSwitchingCurrency] = useState(false);
 
   useEffect(() => {
     api
@@ -55,7 +57,12 @@ export default function App() {
   );
 
   // Saved assets drive the dashboard; the draft only drives the editor.
-  const saved = portfolio?.assets ?? [];
+  const currency = portfolio?.currency ?? 'usd';
+  // Prices are stored per currency, so switching is a re-read, not a refetch.
+  const saved = useMemo(
+    () => withPricesIn(portfolio?.assets ?? [], currency),
+    [portfolio, currency]
+  );
   const { total, rows } = useMemo(() => computeState(saved), [saved]);
 
   const parsedAmount = Number(String(amount).replace(/\./g, '').replace(',', '.')) || 0;
@@ -101,6 +108,21 @@ export default function App() {
     }
   };
 
+  const changeCurrency = async (next) => {
+    if (next === currency || switchingCurrency) return;
+    setSwitchingCurrency(true);
+    try {
+      const { portfolio: updated } = await api.setCurrency(next);
+      setPortfolio(updated);
+      setDraft(updated.assets);
+      setNotice(null);
+    } catch (err) {
+      setNotice(err.message);
+    } finally {
+      setSwitchingCurrency(false);
+    }
+  };
+
   const refresh = async () => {
     setRefreshing(true);
     setNotice(null);
@@ -136,7 +158,19 @@ export default function App() {
       <div className="app">
         <div className="top">
           <span className="brand">Portfolio</span>
-          <span className="cap num" style={{ letterSpacing: '0.08em' }}>USD</span>
+          <div className="switch" role="group" aria-label="Moeda de exibição">
+            {CURRENCIES.map((c) => (
+              <button
+                key={c}
+                className={`btn quiet ${c === currency ? 'on' : ''}`}
+                onClick={() => changeCurrency(c)}
+                disabled={switchingCurrency}
+                aria-pressed={c === currency}
+              >
+                {CURRENCY_META[c].label}
+              </button>
+            ))}
+          </div>
           <span className="grow" />
           <button className="btn icon" onClick={toggleTheme} aria-label="Alternar modo claro e escuro">
             {theme === 'dark' ? '☀' : '☾'}
@@ -151,22 +185,24 @@ export default function App() {
 
         {hasAssets ? (
           <>
-            <Plates rows={rows} total={total} />
-            <Donut rows={rows} total={total} theme={theme} />
+            <Plates rows={rows} total={total} currency={currency} />
+            <Donut rows={rows} total={total} theme={theme} currency={currency} />
             <DeviationBars
               rows={rows}
               total={total}
               theme={theme}
               projection={projection}
               staleSymbols={staleSymbols}
+              currency={currency}
             />
             <ActionDeck
               amount={amount}
               onAmountChange={setAmount}
               contribution={contribution}
               rebalance={rebalance}
+              currency={currency}
             />
-            <HistoryChart history={portfolio.history} />
+            <HistoryChart history={historyIn(portfolio.history, currency)} currency={currency} />
           </>
         ) : (
           <div className="empty">
@@ -189,6 +225,7 @@ export default function App() {
           theme={theme}
           backupAvailable={backupAvailable}
           restoring={restoring}
+          currency={currency}
         />
       </div>
 

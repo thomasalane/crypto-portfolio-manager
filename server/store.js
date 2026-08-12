@@ -1,8 +1,9 @@
 import { existsSync, readFileSync, writeFileSync, renameSync, copyFileSync } from 'node:fs';
+import { isSupported } from '../core/currency.js';
 
 /** The shape a brand-new install starts from. No assets are ever pre-configured. */
 export const EMPTY_PORTFOLIO = Object.freeze({
-  version: 1,
+  version: 2,
   currency: 'usd',
   assets: [],
   history: [],
@@ -47,14 +48,34 @@ export function loadPortfolio(filePath) {
     };
   }
 
+  return { portfolio: migrate(parsed), warning: null };
+}
+
+/**
+ * Version 1 held one price per asset and one total per snapshot, always in USD.
+ * Version 2 holds a value per currency so the display can switch without
+ * refetching and without inventing historical exchange rates. Files written by
+ * version 1 are read forward on load; the new shape is written on the next save.
+ */
+function migrate(parsed) {
+  const assets = parsed.assets.map((a) => {
+    if (a.prices && typeof a.prices === 'object') return a;
+    const { lastPrice, ...rest } = a;
+    return { ...rest, prices: typeof lastPrice === 'number' ? { usd: lastPrice } : {} };
+  });
+
+  const rawHistory = Array.isArray(parsed.history) ? parsed.history : [];
+  const history = rawHistory.map((h) => {
+    if (h.totals && typeof h.totals === 'object') return h;
+    const { total, ...rest } = h;
+    return { ...rest, totals: typeof total === 'number' ? { usd: total } : {} };
+  });
+
   return {
-    portfolio: {
-      version: parsed.version ?? 1,
-      currency: parsed.currency ?? 'usd',
-      assets: parsed.assets,
-      history: Array.isArray(parsed.history) ? parsed.history : [],
-    },
-    warning: null,
+    version: 2,
+    currency: isSupported(parsed.currency) ? parsed.currency : 'usd',
+    assets,
+    history,
   };
 }
 

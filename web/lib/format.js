@@ -1,4 +1,21 @@
 /** pt-BR display formatting. Rounding happens here and nowhere else. */
+import { CURRENCY_META } from '../../core/currency.js';
+
+export const symbolFor = (currency) => CURRENCY_META[currency]?.symbol ?? '$';
+
+/** Money with its currency symbol, e.g. "$1.234,56" or "R$ 6.420,00". */
+export const cash = (value, currency, digits = 2) => {
+  const symbol = symbolFor(currency);
+  const space = symbol === 'R$' ? ' ' : '';
+  return `${symbol}${space}${money(value, digits)}`;
+};
+
+/** A price with its symbol, decimals scaled to the magnitude. */
+export const cashPrice = (value, currency) => {
+  const symbol = symbolFor(currency);
+  const space = symbol === 'R$' ? ' ' : '';
+  return `${symbol}${space}${price(value)}`;
+};
 
 export const money = (value, digits = 2) =>
   (Number(value) || 0).toLocaleString('pt-BR', {
