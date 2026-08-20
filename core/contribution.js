@@ -51,8 +51,7 @@ export function planContribution(assets, amount) {
     }));
   }
 
-  return allocations
-    .filter((a) => a.amount >= MIN_ORDER)
+  return concentrate(allocations)
     .sort((a, b) => b.amount - a.amount)
     .map(({ row, amount: value }) => ({
       id: row.id,
@@ -60,4 +59,29 @@ export function planContribution(assets, amount) {
       side: 'buy',
       amount: value,
     }));
+}
+
+/**
+ * Fold orders that are too small to be worth placing into the ones that
+ * survive, smallest first, until every remaining order clears MIN_ORDER.
+ *
+ * Simply discarding them would lose the user's money: asked to invest 2, they
+ * would be handed orders totalling 1.32 and no explanation of the missing 0.68.
+ * The last order standing is kept whatever its size — when the whole
+ * contribution is smaller than the minimum, one undersized order still beats
+ * showing nothing at all.
+ */
+function concentrate(allocations) {
+  let live = allocations.filter((a) => a.amount > 0);
+
+  while (live.length > 1 && live.some((a) => a.amount < MIN_ORDER)) {
+    const [smallest, ...rest] = [...live].sort((a, b) => a.amount - b.amount);
+    const restTotal = rest.reduce((s, a) => s + a.amount, 0);
+    live = rest.map((a) => ({
+      ...a,
+      amount: a.amount + smallest.amount * (a.amount / restTotal),
+    }));
+  }
+
+  return live;
 }

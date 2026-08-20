@@ -134,6 +134,59 @@ describe('planContribution', () => {
     expect(orders.find((o) => o.id === 'tiny')).toBeUndefined();
   });
 
+  it('still spends the whole amount when an order is dropped for being too small', () => {
+    // The dropped order's share has to go somewhere: telling someone to invest
+    // 100 and listing 99.30 of orders loses their money silently.
+    const assets = [
+      asset({ id: 'big', target: 0.999, quantity: 0, lastPrice: 100 }),
+      asset({ id: 'tiny', target: 0.001, quantity: 0, lastPrice: 100 }),
+    ];
+    expect(sum(planContribution(assets, 100))).toBeCloseTo(100, 6);
+  });
+
+  it('spends a small amount entirely on one asset rather than showing nothing', () => {
+    // Two assets short, but each proportional share lands under the minimum.
+    const assets = [
+      asset({ id: 'a', target: 0.5, quantity: 1, lastPrice: 100 }),
+      asset({ id: 'b', target: 0.5, quantity: 0, lastPrice: 100 }),
+    ];
+    const orders = planContribution(assets, 1);
+    expect(orders).toHaveLength(1);
+    expect(sum(orders)).toBeCloseTo(1, 6);
+  });
+
+  it('spends an amount smaller than the minimum order', () => {
+    const assets = [
+      asset({ id: 'a', target: 0.5, quantity: 1, lastPrice: 100 }),
+      asset({ id: 'b', target: 0.5, quantity: 0, lastPrice: 100 }),
+    ];
+    const orders = planContribution(assets, 0.5);
+    expect(orders).toHaveLength(1);
+    expect(sum(orders)).toBeCloseTo(0.5, 6);
+  });
+
+  it('never leaves money unassigned, at any amount', () => {
+    const assets = [
+      asset({ id: 'a', target: 0.75, quantity: 0.5, lastPrice: 100 }),
+      asset({ id: 'b', target: 0.2, quantity: 0.1, lastPrice: 100 }),
+      asset({ id: 'c', target: 0.05, quantity: 0, lastPrice: 100 }),
+    ];
+    for (const amount of [0.5, 1, 1.5, 2, 3, 5, 7.5, 10, 25, 100, 1000]) {
+      expect(sum(planContribution(assets, amount))).toBeCloseTo(amount, 6);
+    }
+  });
+
+  it('keeps every surviving order at or above the minimum when it can', () => {
+    const assets = [
+      asset({ id: 'a', target: 0.5, quantity: 1, lastPrice: 100 }),
+      asset({ id: 'b', target: 0.3, quantity: 0, lastPrice: 100 }),
+      asset({ id: 'c', target: 0.2, quantity: 0, lastPrice: 100 }),
+    ];
+    const orders = planContribution(assets, 4);
+    expect(orders.length).toBeGreaterThan(0);
+    for (const o of orders) expect(o.amount).toBeGreaterThanOrEqual(MIN_ORDER);
+  });
+
   it('sorts orders from largest to smallest', () => {
     const assets = [
       asset({ id: 'a', target: 0.2, quantity: 0, lastPrice: 100 }),
